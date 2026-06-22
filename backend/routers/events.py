@@ -17,13 +17,13 @@ def get_events():
 def create_event(event: Events):
     global next_event_id
 
-    new_event =  event.model_dump
+    new_event =  event.model_dump()
     new_event["id"]= next_event_id
 
     events.append(new_event)
     next_event_id+=1
 
-    return event
+    return new_event
 
 @router.get("/{event_id}")
 def get_event(event_id:int):
@@ -38,7 +38,7 @@ def get_event(event_id:int):
     )
 
 @router.put("/{event_id}")
-def update_event(event_id:int,updated_event=Events):
+def update_event(event_id:int,updated_event:Events):
     
     for event in events:
         if event["id"] == event_id:
@@ -50,7 +50,7 @@ def update_event(event_id:int,updated_event=Events):
 
             return event
 
-    return HTTPException(
+    raise HTTPException(
         status_code=404,detail="Event not found"
         )
 

@@ -85,10 +85,21 @@ The platform enables organizers to manage registrations efficiently while provid
 ZeroQ/
 │
 ├── backend/
+│   ├── routers/
+│   │   └── events.py
+│   │
+│   ├── schemas/
+│   │   └── event.py
+│   │
+│   ├── main.py
+│   └── requirements.txt
+│
 ├── frontend/
+│
 ├── docs/
 │
-└── README.md
+├── README.md
+└── .gitignore
 ```
 
 ---
