@@ -17,6 +17,17 @@ def get_users():
 def create_user(user:User):
     global next_user_id
 
+    for existing_user in users:
+        if (
+            existing_user["email"] == user.email
+            or
+            existing_user["reg_no"] == user.reg_no
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="User already exists"
+            )
+
     new_user= user.model_dump()
     new_user["id"] =  next_user_id
 

@@ -17,6 +17,19 @@ def get_events():
 def create_event(event: Events):
     global next_event_id
 
+    for existing_event in events:
+
+       if( existing_event["title"] == event.title 
+        and 
+        existing_event["venue"] == event.venue 
+        and 
+        existing_event["date"] == event.date):
+           
+           raise HTTPException(
+                status_code=400,
+                detail="Event already exists"
+            )
+
     new_event =  event.model_dump()
     new_event["id"]= next_event_id
 

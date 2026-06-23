@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from routers.events import router as event_router
 from routers.users import router as user_router 
+from routers.registrations import router as registration_router
 
 app = FastAPI(
     title = "ZeroQ",
@@ -10,6 +11,7 @@ app = FastAPI(
 
 app.include_router(event_router)
 app.include_router(user_router)
+app.include_router(registration_router)
 
 @app.get("/")
 def root():
