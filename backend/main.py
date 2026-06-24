@@ -2,12 +2,15 @@ from fastapi import FastAPI
 from routers.events import router as event_router
 from routers.users import router as user_router 
 from routers.registrations import router as registration_router
+from database.database import Base, engine
 
 app = FastAPI(
     title = "ZeroQ",
     description = "QR-powered event registration and attendance management platform",
     version="0.1.0"
 )
+
+Base.metadata.create_all(bind=engine)
 
 app.include_router(event_router)
 app.include_router(user_router)

@@ -1,87 +1,148 @@
-from fastapi import APIRouter , HTTPException
-from schemas.user import User
+from fastapi import APIRouter , HTTPException , Depends
+from sqlalchemy.orm import Session
+
+from database.database import get_db
+from models.user import User
+from schemas.user import UserCreate
+
 
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
 )
 
-users = []
-next_user_id=1
-
 @router.get("/")
-def get_users():
-    return users
+def get_users(db:Session=Depends(get_db)):
+    return db.query(User).all()
+    
 
 @router.post("/")
-def create_user(user:User):
-    global next_user_id
+def create_user(
+    user:UserCreate , 
+    db:Session=Depends(get_db)
+    ):
 
-    for existing_user in users:
-        if (
-            existing_user["email"] == user.email
-            or
-            existing_user["reg_no"] == user.reg_no
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="User already exists"
-            )
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
 
-    new_user= user.model_dump()
-    new_user["id"] =  next_user_id
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="User already exists"
+        )
+      
+    existing_reg_no = db.query(User).filter(
+        User.reg_no == user.reg_no
+    ).first()
 
-    users.append(new_user)
-    next_user_id+=1
+    if existing_reg_no:
+        raise HTTPException(
+            status_code=400,
+            detail="Registration number already exists"
+        )
+    new_user =  User(
+        name=user.name,
+        email=user.email,
+        reg_no=user.reg_no,
+        phone=user.phone_no,
+        password =user.password
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
     return new_user
 
 @router.get("/{user_id}")
-def get_user(user_id: int):
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db)
+    ):
 
-    for user in users:
-        if user["id"] == user_id:
-            return user
+    user = db.query(User).filter(
+        User.id == user_id
+        ).first()
 
-    raise HTTPException(
-        status_code=404,
-        detail="User not found"
-    )
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    return user
 
 
 @router.put("/{user_id}")
-def update_user(user_id: int, updated_user: User):
+def update_user(
+    user_id: int,
+    updated_user: UserCreate,
+    db: Session = Depends(get_db)
+):
 
-    for user in users:
-        if user["id"] == user_id:
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
 
-            updated_data = updated_user.model_dump()
-            updated_data["id"] = user_id
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    
+    existing_email = db.query(User).filter(
+    User.email == updated_user.email,
+    User.id != user_id
+     ).first()
 
-            user.update(updated_data)
+    if existing_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists"
+        )
 
-            return user
+    existing_reg_no = db.query(User).filter(
+        User.reg_no == updated_user.reg_no,
+        User.id != user_id
+    ).first()
 
-    raise HTTPException(
-        status_code=404,
-        detail="User not found"
-    )
+    if existing_reg_no:
+        raise HTTPException(
+            status_code=400,
+            detail="Registration number already exists"
+        )
 
+    user.name = updated_user.name
+    user.email = updated_user.email
+    user.reg_no = updated_user.reg_no
+    user.phone = updated_user.phone_no
+    user.password = updated_user.password
+
+    db.commit()
+    db.refresh(user)
+
+    return user
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int):
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
 
-    for index , user in enumerate(users):
-        if user["id"] == user_id:
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
 
-            deleted_user = users.pop(index)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
 
-            return {
-                "message": "User deleted successfully",
-                "user": deleted_user
-            }
+    db.delete(user)
+    db.commit()
 
-    raise HTTPException(
-        status_code=404,
-        detail="User not found"
-    )
+    return {
+        "message": "User deleted successfully"
+    }
