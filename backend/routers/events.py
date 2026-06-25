@@ -1,85 +1,132 @@
-from fastapi import APIRouter , HTTPException
-from schemas.event import Events
+from fastapi import APIRouter , HTTPException , Depends
+from sqlalchemy.orm import Session
+from schemas.event import EventsCreate
+
+from database.database import get_db
+from models.event import Event
+from schemas.event import EventsCreate
 
 router = APIRouter (
     prefix ="/events",
     tags=["Events"]
 )
 
-events =[]
-next_event_id =1
-
 @router.get("/")
-def get_events():
-    return events
+def get_events(db: Session = Depends(get_db)):
+    return db.query(Event).all()
 
 @router.post("/")
-def create_event(event: Events):
-    global next_event_id
+def create_event(
+    event: EventsCreate,
+    db: Session = Depends(get_db)
+):
 
-    for existing_event in events:
+    existing_event = db.query(Event).filter(
+        Event.title == event.title,
+        Event.venue == event.venue,
+        Event.date == event.date
+    ).first()
 
-       if( existing_event["title"] == event.title 
-        and 
-        existing_event["venue"] == event.venue 
-        and 
-        existing_event["date"] == event.date):
-           
-           raise HTTPException(
-                status_code=400,
-                detail="Event already exists"
-            )
+    if existing_event:
+        raise HTTPException(
+            status_code=400,
+            detail="Event already exists"
+        )
 
-    new_event =  event.model_dump()
-    new_event["id"]= next_event_id
+    new_event = Event(
+        title=event.title,
+        description=event.description,
+        venue=event.venue,
+        date=event.date,
+        capacity=event.capacity,
+        price=event.price
+    )
 
-    events.append(new_event)
-    next_event_id+=1
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
 
     return new_event
 
 @router.get("/{event_id}")
-def get_event(event_id:int):
+def get_event(
+    event_id: int,
+    db: Session = Depends(get_db)
+):
 
-    for event in events:
-        if event["id"]==event_id:
-            return event
-        
-    raise HTTPException(
-        status_code=404,
-        detail="Event not found"
-    )
+    event = db.query(Event).filter(
+        Event.id == event_id
+    ).first()
 
-@router.put("/{event_id}")
-def update_event(event_id:int,updated_event:Events):
-    
-    for event in events:
-        if event["id"] == event_id:
-
-            updated_data = updated_event.model_dump()
-            updated_data["id"] = event_id
-
-            event.update(updated_data)
-
-            return event
-
-    raise HTTPException(
-        status_code=404,detail="Event not found"
+    if not event:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found"
         )
 
+    return event
+
+@router.put("/{event_id}")
+def update_event(
+    event_id: int,
+    updated_event: EventsCreate,
+    db: Session = Depends(get_db)
+):
+
+    event = db.query(Event).filter(
+        Event.id == event_id
+    ).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found"
+        )
+
+    existing_event = db.query(Event).filter(
+        Event.title == updated_event.title,
+        Event.venue == updated_event.venue,
+        Event.date == updated_event.date,
+        Event.id != event_id
+    ).first()
+
+    if existing_event:
+        raise HTTPException(
+            status_code=400,
+            detail="Event already exists"
+        )
+
+    event.title = updated_event.title
+    event.description = updated_event.description
+    event.venue = updated_event.venue
+    event.date = updated_event.date
+    event.capacity = updated_event.capacity
+    event.price = updated_event.price
+
+    db.commit()
+    db.refresh(event)
+
+    return event
+
 @router.delete("/{event_id}")
-def delete_event(event_id:int):
-    
-    for event in events:
-        if event["id"] == event_id:
+def delete_event(
+    event_id: int,
+    db: Session = Depends(get_db)
+):
 
-            events.remove(event)
+    event = db.query(Event).filter(
+        Event.id == event_id
+    ).first()
 
-            return {
-                "message": "Event deleted successfully"
-            }
+    if not event:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found"
+        )
 
-    raise HTTPException(
-        status_code=404,
-        detail="Event not found"
-    )
+    db.delete(event)
+    db.commit()
+
+    return {
+        "message": "Event deleted successfully"
+    }

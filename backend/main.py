@@ -3,6 +3,8 @@ from routers.events import router as event_router
 from routers.users import router as user_router 
 from routers.registrations import router as registration_router
 from database.database import Base, engine
+from models.event import Event
+from models.user import User
 
 app = FastAPI(
     title = "ZeroQ",

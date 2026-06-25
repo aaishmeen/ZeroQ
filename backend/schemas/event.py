@@ -1,9 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import date
 
-class Events(BaseModel):
-    title:str
+class EventsCreate(BaseModel):
+    title:str = Field(min_length=3)
     description:str
-    venue:str
-    date:str
-    capacity:int
-    price:float
+    venue:str = Field(min_length=1)
+    date:date
+    capacity:int = Field(gt=0)
+    price:float = Field(ge=0)
