@@ -1,81 +1,48 @@
 # ZeroQ
 
-> **Because entry shouldn't take an hour.**
+> Because entry shouldn't take an hour.
 
-A QR-powered event registration, verification, and attendance management platform designed to streamline event check-ins, reduce queues, and simplify attendee validation.
-
----
-
-## Overview
-
-ZeroQ aims to eliminate the inefficiencies of manual event entry processes commonly seen at university events, hackathons, cultural festivals, and conferences.
-
-Instead of relying on payment screenshots, manual ID verification, and spreadsheets, organizers can verify participants beforehand and issue secure QR-based tickets. At the venue, volunteers simply scan the QR code to validate entry and record attendance instantly.
-
----
-
-## The Problem
-
-Traditional event entry often involves:
-
-* Manual payment verification
-* Student ID checks
-* Spreadsheet lookups
-* Long waiting lines
-* Duplicate entries
-* Volunteer overload
-
-These processes slow down event operations and create a poor attendee experience.
-
----
-
-## The Solution
-
-ZeroQ digitizes the complete attendee journey:
-
-**Registration → Verification → QR Ticket Generation → Check-In → Attendance Tracking**
-
-The platform enables organizers to manage registrations efficiently while providing attendees with a faster and smoother entry experience.
-
----
-
-## Planned Features
-
-* Secure User Authentication
-* Role-Based Access Control (Student, Admin, Volunteer)
-* Event Creation & Management
-* Registration Approval Workflow
-* QR Ticket Generation
-* QR-Based Check-In
-* Attendance Tracking
-* Duplicate Entry Prevention
-* Event Analytics Dashboard
+ZeroQ is a FastAPI-based event management and virtual queue system designed to simplify event registrations and eliminate long waiting lines. It provides user management, event management, and event registration APIs backed by PostgreSQL and SQLAlchemy.
 
 ---
 
 ## Tech Stack
 
-### Backend
+- Python
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Pydantic
+- Uvicorn
 
-* Python
-* FastAPI
-* PostgreSQL
-* SQLAlchemy
-* JWT Authentication
+---
 
-### Frontend
+## Features
 
-* HTML
-* CSS
-* JavaScript
+### Users
+- Create User
+- Get All Users
+- Get User by ID
+- Update User
+- Delete User
+- Duplicate Email Validation
+- Duplicate Registration Number Validation
 
-### Tools
+### Events
+- Create Event
+- Get All Events
+- Get Event by ID
+- Update Event
+- Delete Event
+- Duplicate Event Validation
 
-* Git
-* GitHub
-* Postman
-* qrcode
-* html5-qrcode
+### Registrations
+- Register User for Event
+- Get All Registrations
+- Get Registration by ID
+- Delete Registration
+- Prevent Duplicate Registrations
+- Validate User & Event Existence
 
 ---
 
@@ -85,67 +52,125 @@ The platform enables organizers to manage registrations efficiently while provid
 ZeroQ/
 │
 ├── backend/
+│   ├── database/
+│   │   └── database.py
+│   │
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── event.py
+│   │   └── registration.py
 │   │
 │   ├── routers/
-│   │   ├── events.py
 │   │   ├── users.py
+│   │   ├── events.py
 │   │   └── registrations.py
 │   │
 │   ├── schemas/
-│   │   ├── event.py
 │   │   ├── user.py
+│   │   ├── event.py
 │   │   └── registration.py
 │   │
+│   ├── .env.example
+│   ├── .gitignore
 │   ├── main.py
 │   └── requirements.txt
 │
-├── frontend/
-│
-├── docs/
-│
-├── .gitignore
-└── README.md
+└── frontend/ (Coming Soon)
 ```
 
 ---
 
-## Roadmap
+## Architecture
 
-### Version 1
-
-* Event Management
-* Registration System
-* Payment Verification
-* QR Ticket Generation
-* Attendance Tracking
-
-### Version 2
-
-* Email Notifications
-* PDF Tickets
-* Analytics Dashboard
-* Payment Gateway Integration
-
-### Version 3
-
-* Mobile Application
-* WhatsApp Notifications
-* Multi-Organization Support
+```text
+Client
+   │
+   ▼
+FastAPI Routers
+   │
+   ▼
+Pydantic Schemas
+   │
+   ▼
+SQLAlchemy Models
+   │
+   ▼
+PostgreSQL
+```
 
 ---
 
-## Status
+## Getting Started
 
-🚧 Currently in development.
+### 1. Clone the repository
 
-The initial focus is on building the backend architecture using FastAPI, followed by authentication, event management, registration workflows, and QR-based attendance tracking.
+```bash
+git clone <repository-url>
+cd ZeroQ/backend
+```
+
+### 2. Create a virtual environment
+
+```bash
+python -m venv .venv
+```
+
+### 3. Activate the virtual environment
+
+**Windows**
+
+```bash
+.venv\Scripts\activate
+```
+
+### 4. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Create a `.env` file
+
+```env
+DATABASE_URL=postgresql://username:password@localhost:5432/zeroq
+```
+
+### 6. Run the server
+
+```bash
+fastapi dev main.py
+```
+
+or
+
+```bash
+uvicorn main:app --reload
+```
 
 ---
 
-## Inspiration
+## Current Progress
 
-ZeroQ was inspired by real-world challenges faced during university event management, where manual verification processes created long queues and operational bottlenecks.
+- ✅ FastAPI Setup
+- ✅ PostgreSQL Integration
+- ✅ SQLAlchemy Models
+- ✅ CRUD APIs
+- ✅ Request Validation
+- ✅ User Management
+- ✅ Event Management
+- ✅ Registration Management
 
-The goal is simple:
+### Upcoming
 
-**Because entry shouldn't take an hour.**
+- Foreign Keys
+- SQLAlchemy Relationships
+- JWT Authentication
+- Password Hashing
+- QR Ticket Generation
+- QR Verification
+- Attendance Tracking
+- Admin Dashboard
+- Frontend Integration
+
+---
+

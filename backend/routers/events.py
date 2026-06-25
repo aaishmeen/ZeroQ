@@ -4,7 +4,6 @@ from schemas.event import EventsCreate
 
 from database.database import get_db
 from models.event import Event
-from schemas.event import EventsCreate
 
 router = APIRouter (
     prefix ="/events",

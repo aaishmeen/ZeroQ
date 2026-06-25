@@ -1,6 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-class Registration(BaseModel):
-    user_id:int
-    event_id:int
-    
+class RegistrationCreate(BaseModel):
+    user_id: int = Field(gt=0)
+    event_id: int = Field(gt=0)

@@ -11,5 +11,5 @@ class Event(Base):
 
     date = Column(String , nullable=False)
 
-    capacity =  Column(String, nullable=False)
+    capacity =  Column(Integer, nullable=False)
     price = Column(Float , nullable=False)

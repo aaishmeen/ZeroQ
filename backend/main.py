@@ -5,6 +5,7 @@ from routers.registrations import router as registration_router
 from database.database import Base, engine
 from models.event import Event
 from models.user import User
+from models.registration import Registration
 
 app = FastAPI(
     title = "ZeroQ",
