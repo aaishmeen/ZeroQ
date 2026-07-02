@@ -1,4 +1,5 @@
 from sqlalchemy import Column , Integer , String , Float
+from sqlalchemy.orm import relationship
 from database.database import Base
 
 class Event(Base):
@@ -13,3 +14,8 @@ class Event(Base):
 
     capacity =  Column(Integer, nullable=False)
     price = Column(Float , nullable=False)
+
+    registrations = relationship(
+        "Registration",
+        back_populates="event"
+    )

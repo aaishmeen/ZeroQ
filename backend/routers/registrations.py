@@ -4,7 +4,7 @@ from database.database import get_db
 from models.registration import Registration
 from models.user import User
 from models.event import Event
-from schemas.registration import RegistrationCreate
+from schemas.registration import RegistrationCreate , RegistrationResponse
 
 
 router = APIRouter(
@@ -13,13 +13,19 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get(
+    "/",
+    response_model=list[RegistrationResponse]
+)
 def get_registrations(
     db: Session = Depends(get_db)
 ):
     return db.query(Registration).all()
 
-@router.post("/")
+@router.post(
+    "/",
+    response_model=RegistrationResponse
+)
 def create_registration(
     registration: RegistrationCreate,
     db: Session = Depends(get_db)
@@ -68,7 +74,10 @@ def create_registration(
     return new_registration
 
 
-@router.get("/{registration_id}")
+@router.get(
+    "/{registration_id}",
+    response_model=RegistrationResponse
+)
 def get_registration(
     registration_id: int,
     db: Session = Depends(get_db)

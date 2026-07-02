@@ -1,6 +1,6 @@
 from fastapi import APIRouter , HTTPException , Depends
 from sqlalchemy.orm import Session
-from schemas.event import EventsCreate
+from schemas.event import EventsCreate , EventResponse
 
 from database.database import get_db
 from models.event import Event
@@ -10,11 +10,11 @@ router = APIRouter (
     tags=["Events"]
 )
 
-@router.get("/")
+@router.get("/", response_model=list[EventResponse])
 def get_events(db: Session = Depends(get_db)):
     return db.query(Event).all()
 
-@router.post("/")
+@router.post("/", response_model=EventResponse)
 def create_event(
     event: EventsCreate,
     db: Session = Depends(get_db)
@@ -47,7 +47,7 @@ def create_event(
 
     return new_event
 
-@router.get("/{event_id}")
+@router.get("/{event_id}", response_model=EventResponse)
 def get_event(
     event_id: int,
     db: Session = Depends(get_db)
@@ -65,7 +65,7 @@ def get_event(
 
     return event
 
-@router.put("/{event_id}")
+@router.put("/{event_id}", response_model=EventResponse)
 def update_event(
     event_id: int,
     updated_event: EventsCreate,

@@ -6,3 +6,14 @@ class UserCreate(BaseModel):
     reg_no: str = Field(min_length=5, max_length=20)
     phone_no: str = Field(pattern=r"^\d{10}$")
     password: str = Field(min_length=8)
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    reg_no: str
+    phone: str
+
+    model_config = {
+        "from_attributes": True
+    }    

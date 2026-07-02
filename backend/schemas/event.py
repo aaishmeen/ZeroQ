@@ -8,3 +8,16 @@ class EventsCreate(BaseModel):
     date:date
     capacity:int = Field(gt=0)
     price:float = Field(ge=0)
+
+class EventResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    venue: str
+    date: date
+    capacity: int
+    price: float
+
+    model_config = {
+        "from_attributes": True
+    }

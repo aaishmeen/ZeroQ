@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database.database import get_db
 from models.user import User
-from schemas.user import UserCreate
+from schemas.user import UserCreate , UserResponse
 
 
 router = APIRouter(
@@ -11,12 +11,16 @@ router = APIRouter(
     tags=["Users"]
 )
 
-@router.get("/")
+@router.get(
+        "/",
+        response_model=list[UserResponse])
 def get_users(db:Session=Depends(get_db)):
     return db.query(User).all()
     
 
-@router.post("/")
+@router.post(
+        "/",
+        response_model=UserResponse)
 def create_user(
     user:UserCreate , 
     db:Session=Depends(get_db)
@@ -55,7 +59,10 @@ def create_user(
 
     return new_user
 
-@router.get("/{user_id}")
+@router.get(
+        "/{user_id}",
+          response_model= UserResponse)
+
 def get_user(
     user_id: int,
     db: Session = Depends(get_db)
@@ -74,7 +81,9 @@ def get_user(
     return user
 
 
-@router.put("/{user_id}")
+@router.put(
+        "/{user_id}",
+        response_model=UserResponse)
 def update_user(
     user_id: int,
     updated_user: UserCreate,

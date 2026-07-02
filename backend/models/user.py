@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from database.database import Base
 
 
@@ -11,3 +12,8 @@ class User(Base):
     reg_no = Column(String, unique=True, nullable=False)
     phone = Column(String, nullable=False)
     password = Column(String, nullable=False)
+
+    registrations = relationship(
+        "Registration",
+        back_populates="user"
+    )
