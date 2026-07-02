@@ -2,7 +2,7 @@
 
 > Because entry shouldn't take an hour.
 
-ZeroQ is a FastAPI-based event management and virtual queue system designed to simplify event registrations and eliminate long waiting lines. It provides user management, event management, and event registration APIs backed by PostgreSQL and SQLAlchemy.
+ZeroQ is a FastAPI-based event management and virtual queue system that streamlines event registrations, QR-based entry, and attendance management. It is being built as a scalable backend using FastAPI, PostgreSQL, and SQLAlchemy.
 
 ---
 
@@ -10,39 +10,38 @@ ZeroQ is a FastAPI-based event management and virtual queue system designed to s
 
 - Python
 - FastAPI
-- SQLAlchemy
 - PostgreSQL
+- SQLAlchemy
 - Pydantic
 - Uvicorn
+- python-dotenv
 
 ---
 
 ## Features
 
-### Users
-- Create User
-- Get All Users
-- Get User by ID
-- Update User
-- Delete User
-- Duplicate Email Validation
-- Duplicate Registration Number Validation
+### User Management
+- Create, Read, Update & Delete Users
+- Email & Registration Number Validation
+- Request & Response Schemas
 
-### Events
-- Create Event
-- Get All Events
-- Get Event by ID
-- Update Event
-- Delete Event
-- Duplicate Event Validation
+### Event Management
+- Create, Read, Update & Delete Events
+- Event Validation
+- Request & Response Schemas
 
-### Registrations
-- Register User for Event
-- Get All Registrations
-- Get Registration by ID
-- Delete Registration
+### Registration Management
+- Register Users for Events
 - Prevent Duplicate Registrations
 - Validate User & Event Existence
+- Request & Response Schemas
+
+### Database
+- PostgreSQL Integration
+- SQLAlchemy ORM
+- Foreign Keys
+- Relationships
+- Session Management
 
 ---
 
@@ -75,7 +74,8 @@ ZeroQ/
 │   ├── main.py
 │   └── requirements.txt
 │
-└── frontend/ (Coming Soon)
+├── frontend/          # Coming Soon
+└── README.md
 ```
 
 ---
@@ -102,20 +102,18 @@ PostgreSQL
 
 ## Getting Started
 
-### 1. Clone the repository
+### Clone the repository
 
 ```bash
 git clone <repository-url>
 cd ZeroQ/backend
 ```
 
-### 2. Create a virtual environment
+### Create & Activate Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
-
-### 3. Activate the virtual environment
 
 **Windows**
 
@@ -123,54 +121,60 @@ python -m venv .venv
 .venv\Scripts\activate
 ```
 
-### 4. Install dependencies
+### Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Create a `.env` file
+### Create a `.env` file
 
 ```env
 DATABASE_URL=postgresql://username:password@localhost:5432/zeroq
 ```
 
-### 6. Run the server
+### Run the Server
 
 ```bash
 fastapi dev main.py
 ```
 
-or
-
-```bash
-uvicorn main:app --reload
-```
-
 ---
 
-## Current Progress
+## Progress
 
-- ✅ FastAPI Setup
-- ✅ PostgreSQL Integration
-- ✅ SQLAlchemy Models
-- ✅ CRUD APIs
-- ✅ Request Validation
-- ✅ User Management
-- ✅ Event Management
-- ✅ Registration Management
+### ✅ Completed
 
-### Upcoming
-
+- FastAPI Setup
+- PostgreSQL Integration
+- SQLAlchemy ORM
+- CRUD Operations
+- Request Validation
+- Response Models
 - Foreign Keys
 - SQLAlchemy Relationships
-- JWT Authentication
+- User Management APIs
+- Event Management APIs
+- Registration Management APIs
+
+### 🚧 In Progress
+
+- Authentication (JWT)
+
+### 📌 Planned
+
 - Password Hashing
+- Role-Based Authorization
 - QR Ticket Generation
 - QR Verification
 - Attendance Tracking
+- Event Capacity Management
 - Admin Dashboard
-- Frontend Integration
+- Frontend
+- Deployment
 
 ---
 
+## Project Status
+
+🚧 ZeroQ is under active development. New features and improvements are being added regularly.
