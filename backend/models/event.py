@@ -19,3 +19,4 @@ class Event(Base):
         "Registration",
         back_populates="event"
     )
+    
