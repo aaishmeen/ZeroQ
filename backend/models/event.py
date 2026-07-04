@@ -1,4 +1,4 @@
-from sqlalchemy import Column , Integer , String , Float
+from sqlalchemy import Column , Integer , String , Float , Date
 from sqlalchemy.orm import relationship
 from database.database import Base
 
@@ -10,7 +10,7 @@ class Event(Base):
     description = Column(String , nullable=False)
     venue = Column(String, nullable=False)
 
-    date = Column(String , nullable=False)
+    date = Column(Date , nullable=False)
 
     capacity =  Column(Integer, nullable=False)
     price = Column(Float , nullable=False)
