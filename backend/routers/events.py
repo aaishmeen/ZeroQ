@@ -1,9 +1,10 @@
 from fastapi import APIRouter , HTTPException , Depends
 from sqlalchemy.orm import Session
 from schemas.event import EventsCreate , EventResponse
-
 from database.database import get_db
 from models.event import Event
+from dependencies.auth import get_current_user
+from models.user import User
 
 router = APIRouter (
     prefix ="/events",
@@ -17,7 +18,8 @@ def get_events(db: Session = Depends(get_db)):
 @router.post("/", response_model=EventResponse)
 def create_event(
     event: EventsCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     existing_event = db.query(Event).filter(

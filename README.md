@@ -2,41 +2,70 @@
 
 > Because entry shouldn't take an hour.
 
-ZeroQ is a FastAPI-based event management and virtual queue system that streamlines event registrations, QR-based entry, and attendance management. It is being built as a scalable backend using FastAPI, PostgreSQL, and SQLAlchemy.
+ZeroQ is a FastAPI-powered event registration and attendance management platform designed to eliminate long queues during event entry. It provides secure user authentication, event management, registrations, and serves as the foundation for QR-based ticket verification and attendance tracking.
 
 ---
 
-## Tech Stack
+# Tech Stack
 
 - Python
 - FastAPI
 - PostgreSQL
 - SQLAlchemy
 - Pydantic
-- Uvicorn
+- JWT Authentication
+- Passlib (bcrypt)
 - python-dotenv
+- Uvicorn
 
 ---
 
-## Features
+# Features
 
-### User Management
+## User Management
+
 - Create, Read, Update & Delete Users
 - Email & Registration Number Validation
+- Password Hashing (bcrypt)
+- JWT Authentication
+- Secure Login
+- Protected Routes
 - Request & Response Schemas
 
-### Event Management
+---
+
+## Event Management
+
 - Create, Read, Update & Delete Events
-- Event Validation
+- Duplicate Event Validation
+- Protected Event Creation
 - Request & Response Schemas
 
-### Registration Management
+---
+
+## Registration Management
+
 - Register Users for Events
 - Prevent Duplicate Registrations
-- Validate User & Event Existence
+- Validate User Existence
+- Validate Event Existence
 - Request & Response Schemas
 
-### Database
+---
+
+## Authentication
+
+- JWT Token Generation
+- OAuth2 Password Flow
+- Password Hashing
+- Bearer Token Authentication
+- Current User Dependency
+- Protected API Endpoints
+
+---
+
+## Database
+
 - PostgreSQL Integration
 - SQLAlchemy ORM
 - Foreign Keys
@@ -45,14 +74,21 @@ ZeroQ is a FastAPI-based event management and virtual queue system that streamli
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```text
 ZeroQ/
 │
 ├── backend/
+│   ├── auth/
+│   │   ├── hashing.py
+│   │   └── jwt_handler.py
+│   │
 │   ├── database/
 │   │   └── database.py
+│   │
+│   ├── dependencies/
+│   │   └── auth.py
 │   │
 │   ├── models/
 │   │   ├── user.py
@@ -80,7 +116,7 @@ ZeroQ/
 
 ---
 
-## Architecture
+# Architecture
 
 ```text
 Client
@@ -89,51 +125,68 @@ Client
 FastAPI Routers
    │
    ▼
+Authentication Layer
+   │
+   ▼
 Pydantic Schemas
    │
    ▼
 SQLAlchemy Models
    │
    ▼
-PostgreSQL
+PostgreSQL Database
 ```
 
 ---
 
-## Getting Started
+# Getting Started
 
-### Clone the repository
+## Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd ZeroQ/backend
 ```
 
-### Create & Activate Virtual Environment
+---
+
+## Create a Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-**Windows**
+### Windows
 
 ```bash
 .venv\Scripts\activate
 ```
 
-### Install Dependencies
+---
+
+## Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Create a `.env` file
+---
+
+## Create a `.env` File
 
 ```env
 DATABASE_URL=postgresql://username:password@localhost:5432/zeroq
+
+SECRET_KEY=your_secret_key
+
+ALGORITHM=HS256
+
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
-### Run the Server
+---
+
+## Run the Server
 
 ```bash
 fastapi dev main.py
@@ -141,40 +194,91 @@ fastapi dev main.py
 
 ---
 
-## Progress
+## API Documentation
 
-### ✅ Completed
+Swagger UI
 
-- FastAPI Setup
+```
+http://127.0.0.1:8000/docs
+```
+
+ReDoc
+
+```
+http://127.0.0.1:8000/redoc
+```
+
+---
+
+# Progress
+
+## ✅ Completed
+
+- FastAPI Project Setup
 - PostgreSQL Integration
 - SQLAlchemy ORM
-- CRUD Operations
+- CRUD APIs
 - Request Validation
 - Response Models
-- Foreign Keys
-- SQLAlchemy Relationships
-- User Management APIs
-- Event Management APIs
-- Registration Management APIs
-
-### 🚧 In Progress
-
-- Authentication (JWT)
-
-### 📌 Planned
-
+- Database Relationships
+- User Management
+- Event Management
+- Registration Management
 - Password Hashing
+- JWT Authentication
+- OAuth2 Login
+- Protected Routes
+
+---
+
+## 🚧 In Progress
+
 - Role-Based Authorization
+- Payment Verification Workflow
+
+---
+
+## 📌 Planned
+
 - QR Ticket Generation
-- QR Verification
+- QR Code Verification
 - Attendance Tracking
 - Event Capacity Management
+- Organizer Dashboard
+- Volunteer Dashboard
+- Student Dashboard
 - Admin Dashboard
+- File Uploads
+- Email Notifications
 - Frontend
 - Deployment
 
 ---
 
-## Project Status
+# Future Workflow
 
-🚧 ZeroQ is under active development. New features and improvements are being added regularly.
+```text
+Student
+    │
+Register
+    │
+Upload Payment Proof
+    │
+Admin Verification
+    │
+QR Ticket Generated
+    │
+Event Check-In
+    │
+QR Scan
+    │
+Attendance Recorded
+```
+
+---
+
+# Project Status
+
+🚧 ZeroQ is currently under active development. The backend foundation is complete with authentication, database integration, and core CRUD functionality. Upcoming milestones include role-based access control, payment verification, QR ticket generation, and attendance management.
+
+---

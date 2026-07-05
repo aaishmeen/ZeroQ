@@ -1,32 +1,36 @@
-from fastapi import APIRouter , HTTPException , Depends
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from passlib.exc import UnknownHashError
 
 from database.database import get_db
 from models.user import User
-from schemas.user import UserCreate , UserResponse , UserLogin , Token
+from schemas.user import UserCreate, UserResponse, Token
 from auth.hashing import hash_password, verify_password
 from auth.jwt_handler import create_access_token
-
 
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
 )
 
+
 @router.get(
-        "/",
-        response_model=list[UserResponse])
-def get_users(db:Session=Depends(get_db)):
+    "/",
+    response_model=list[UserResponse]
+)
+def get_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
 
 @router.post(
-        "/",
-        response_model=UserResponse)
+    "/",
+    response_model=UserResponse
+)
 def create_user(
-    user:UserCreate , 
-    db:Session=Depends(get_db)
-    ):
+    user: UserCreate,
+    db: Session = Depends(get_db)
+):
 
     existing_user = db.query(User).filter(
         User.email == user.email
@@ -37,7 +41,7 @@ def create_user(
             status_code=400,
             detail="User already exists"
         )
-      
+
     existing_reg_no = db.query(User).filter(
         User.reg_no == user.reg_no
     ).first()
@@ -47,12 +51,15 @@ def create_user(
             status_code=400,
             detail="Registration number already exists"
         )
-    new_user =  User(
+
+    hashed_password = hash_password(user.password)
+
+    new_user = User(
         name=user.name,
         email=user.email,
         reg_no=user.reg_no,
         phone=user.phone_no,
-        password = hash_password(user.password)
+        password=hashed_password
     )
 
     db.add(new_user)
@@ -67,27 +74,38 @@ def create_user(
     response_model=Token
 )
 def login(
-    user: UserLogin,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
 
     existing_user = db.query(User).filter(
-        User.email == user.email
+        User.email == form_data.username
     ).first()
 
     if not existing_user:
         raise HTTPException(
             status_code=401,
-            detail="Invalid email or password"
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
-    if not verify_password(
-        user.password,
-        existing_user.password
-    ):
+    try:
+        password_valid = verify_password(
+            form_data.password,
+            existing_user.password
+        )
+    except UnknownHashError:
         raise HTTPException(
             status_code=401,
-            detail="Invalid email or password"
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    if not password_valid:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
     access_token = create_access_token(
@@ -103,17 +121,17 @@ def login(
 
 
 @router.get(
-        "/{user_id}",
-          response_model= UserResponse)
-
+    "/{user_id}",
+    response_model=UserResponse
+)
 def get_user(
     user_id: int,
     db: Session = Depends(get_db)
-    ):
+):
 
     user = db.query(User).filter(
         User.id == user_id
-        ).first()
+    ).first()
 
     if not user:
         raise HTTPException(
@@ -125,8 +143,9 @@ def get_user(
 
 
 @router.put(
-        "/{user_id}",
-        response_model=UserResponse)
+    "/{user_id}",
+    response_model=UserResponse
+)
 def update_user(
     user_id: int,
     updated_user: UserCreate,
@@ -142,11 +161,11 @@ def update_user(
             status_code=404,
             detail="User not found"
         )
-    
+
     existing_email = db.query(User).filter(
-    User.email == updated_user.email,
-    User.id != user_id
-     ).first()
+        User.email == updated_user.email,
+        User.id != user_id
+    ).first()
 
     if existing_email:
         raise HTTPException(
@@ -176,7 +195,10 @@ def update_user(
 
     return user
 
-@router.delete("/{user_id}")
+
+@router.delete(
+    "/{user_id}"
+)
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db)
