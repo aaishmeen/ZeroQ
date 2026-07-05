@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from schemas.event import EventsCreate, EventResponse
+from schemas.event import EventsCreate, EventResponse , EventReject
 from database.database import get_db
 from models.event import Event
 from models.user import User
@@ -16,9 +16,12 @@ router = APIRouter(
 
 
 @router.get("/", response_model=list[EventResponse])
-def get_events(db: Session = Depends(get_db)):
-    return db.query(Event).all()
-
+def get_events(
+    db: Session = Depends(get_db)
+):
+    return db.query(Event).filter(
+        Event.status == EventStatus.APPROVED.value
+    ).all()
 
 @router.get("/pending", response_model=list[EventResponse])
 def get_pending_events(
@@ -66,6 +69,18 @@ def create_event(
 
     return new_event
 
+@router.get("/my-events", response_model=list[EventResponse])
+def get_my_events(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("organizer", "admin"))
+):
+
+    if current_user.role == "admin":
+        return db.query(Event).all()
+
+    return db.query(Event).filter(
+        Event.owner_id == current_user.id
+    ).all()
 
 @router.get("/{event_id}", response_model=EventResponse)
 def get_event(
@@ -154,4 +169,72 @@ def submit_event(
 
     return {
         "message": "Event submitted for approval."
+    }
+
+@router.patch("/{event_id}/approve")
+def approve_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+
+    event = db.query(Event).filter(
+        Event.id == event_id
+    ).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found."
+        )
+
+    if event.status != EventStatus.PENDING.value:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot approve an event with status '{event.status}'."
+        )
+
+    event.status = EventStatus.APPROVED.value
+
+    event.rejection_reason = None
+
+    db.commit()
+    db.refresh(event)
+
+    return {
+        "message": "Event approved successfully."
+    }
+
+@router.patch("/{event_id}/reject")
+def reject_event(
+    event_id: int,
+    rejection: EventReject,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+
+    event = db.query(Event).filter(
+        Event.id == event_id
+    ).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found."
+        )
+
+    if event.status != EventStatus.PENDING.value:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot reject an event with status '{event.status}'."
+        )
+
+    event.status = EventStatus.DRAFT.value
+    event.rejection_reason = rejection.reason
+
+    db.commit()
+    db.refresh(event)
+
+    return {
+        "message": "Event rejected successfully."
     }

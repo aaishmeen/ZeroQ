@@ -19,7 +19,14 @@ class EventResponse(BaseModel):
     price: float
     owner_id: int
     status: str
+    rejection_reason: str | None
 
     model_config = {
         "from_attributes": True
     }
+
+class EventReject(BaseModel):
+    reason: str = Field(
+        min_length=5,
+        max_length=500
+    )    

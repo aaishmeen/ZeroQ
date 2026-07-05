@@ -22,6 +22,11 @@ class Event(Base):
         default=EventStatus.DRAFT.value
     )
 
+    rejection_reason = Column(
+    String,
+    nullable=True
+    )
+
     owner_id = Column(
         Integer,
         ForeignKey("users.id"),
