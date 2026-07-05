@@ -12,8 +12,15 @@ class User(Base):
     reg_no = Column(String, unique=True, nullable=False)
     phone = Column(String, nullable=False)
     password = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="student" )
+
 
     registrations = relationship(
         "Registration",
         back_populates="user"
+    )
+
+    events = relationship(
+    "Event",
+    back_populates="owner"
     )

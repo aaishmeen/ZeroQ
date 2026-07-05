@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     reg_no: str
     phone: str
+    role: str
 
     model_config = {
         "from_attributes": True
@@ -25,3 +26,12 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str    
+
+from typing import Literal
+
+class UserRoleUpdate(BaseModel):
+    role: Literal[
+        "admin",
+        "organizer",
+        "student"
+    ]    

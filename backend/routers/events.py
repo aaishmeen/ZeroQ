@@ -1,25 +1,40 @@
-from fastapi import APIRouter , HTTPException , Depends
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from schemas.event import EventsCreate , EventResponse
+
+from schemas.event import EventsCreate, EventResponse
 from database.database import get_db
 from models.event import Event
-from dependencies.auth import get_current_user
 from models.user import User
+from dependencies.auth import require_role
+from dependencies.event import get_owned_event
+from constants.event_status import EventStatus
 
-router = APIRouter (
-    prefix ="/events",
+router = APIRouter(
+    prefix="/events",
     tags=["Events"]
 )
+
 
 @router.get("/", response_model=list[EventResponse])
 def get_events(db: Session = Depends(get_db)):
     return db.query(Event).all()
 
+
+@router.get("/pending", response_model=list[EventResponse])
+def get_pending_events(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+    return db.query(Event).filter(
+        Event.status == EventStatus.PENDING.value
+    ).all()
+
+
 @router.post("/", response_model=EventResponse)
 def create_event(
     event: EventsCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role("admin", "organizer"))
 ):
 
     existing_event = db.query(Event).filter(
@@ -40,7 +55,9 @@ def create_event(
         venue=event.venue,
         date=event.date,
         capacity=event.capacity,
-        price=event.price
+        price=event.price,
+        owner_id=current_user.id,
+        status=EventStatus.DRAFT.value
     )
 
     db.add(new_event)
@@ -48,6 +65,7 @@ def create_event(
     db.refresh(new_event)
 
     return new_event
+
 
 @router.get("/{event_id}", response_model=EventResponse)
 def get_event(
@@ -67,28 +85,20 @@ def get_event(
 
     return event
 
+
 @router.put("/{event_id}", response_model=EventResponse)
 def update_event(
     event_id: int,
     updated_event: EventsCreate,
+    event: Event = Depends(get_owned_event),
     db: Session = Depends(get_db)
 ):
-
-    event = db.query(Event).filter(
-        Event.id == event_id
-    ).first()
-
-    if not event:
-        raise HTTPException(
-            status_code=404,
-            detail="Event not found"
-        )
 
     existing_event = db.query(Event).filter(
         Event.title == updated_event.title,
         Event.venue == updated_event.venue,
         Event.date == updated_event.date,
-        Event.id != event_id
+        Event.id != event.id
     ).first()
 
     if existing_event:
@@ -109,25 +119,39 @@ def update_event(
 
     return event
 
+
 @router.delete("/{event_id}")
 def delete_event(
     event_id: int,
+    event: Event = Depends(get_owned_event),
     db: Session = Depends(get_db)
 ):
-
-    event = db.query(Event).filter(
-        Event.id == event_id
-    ).first()
-
-    if not event:
-        raise HTTPException(
-            status_code=404,
-            detail="Event not found"
-        )
 
     db.delete(event)
     db.commit()
 
     return {
         "message": "Event deleted successfully"
+    }
+
+
+@router.post("/{event_id}/submit")
+def submit_event(
+    event: Event = Depends(get_owned_event),
+    db: Session = Depends(get_db)
+):
+
+    if event.status != EventStatus.DRAFT.value:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot submit an event with status '{event.status}'."
+        )
+
+    event.status = EventStatus.PENDING.value
+
+    db.commit()
+    db.refresh(event)
+
+    return {
+        "message": "Event submitted for approval."
     }

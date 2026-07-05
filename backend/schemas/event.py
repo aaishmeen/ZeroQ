@@ -17,6 +17,8 @@ class EventResponse(BaseModel):
     date: date
     capacity: int
     price: float
+    owner_id: int
+    status: str
 
     model_config = {
         "from_attributes": True

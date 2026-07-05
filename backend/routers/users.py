@@ -59,7 +59,8 @@ def create_user(
         email=user.email,
         reg_no=user.reg_no,
         phone=user.phone_no,
-        password=hashed_password
+        password=hashed_password,
+        role="student"
     )
 
     db.add(new_user)
