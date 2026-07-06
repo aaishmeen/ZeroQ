@@ -13,7 +13,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
-Base.metadata.create_all(bind=engine)
+#Base.metadata.create_all(bind=engine)
 
 app.include_router(event_router)
 app.include_router(user_router)
