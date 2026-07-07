@@ -3,11 +3,17 @@ from sqlalchemy.orm import Session
 
 from schemas.event import EventsCreate, EventResponse , EventReject
 from database.database import get_db
+
 from models.event import Event
 from models.user import User
-from dependencies.auth import require_role
-from dependencies.event import get_owned_event
+from models.registration import Registration
+
 from constants.event_status import EventStatus
+from constants.registration_status import RegistrationStatus
+
+from dependencies.auth import require_role , get_current_user
+from dependencies.event import get_owned_event
+
 
 router = APIRouter(
     prefix="/events",
@@ -170,6 +176,72 @@ def submit_event(
     return {
         "message": "Event submitted for approval."
     }
+
+@router.post("/{event_id}/register")
+def register_for_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=403,
+            detail="Only students can register for events."
+        )
+
+    event = db.query(Event).filter(
+        Event.id == event_id
+    ).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found."
+        )
+
+    if event.status != EventStatus.APPROVED.value:
+        raise HTTPException(
+            status_code=400,
+            detail="Registration is only allowed for approved events."
+        )
+    
+    existing_registration = db.query(Registration).filter(
+        Registration.user_id == current_user.id,
+        Registration.event_id == event.id
+        ).first()
+
+    if existing_registration:
+        raise HTTPException(
+        status_code=400,
+        detail="You are already registered for this event."
+    )
+
+    current_registrations = db.query(Registration).filter(
+        Registration.event_id == event.id
+    ).count()
+
+    if current_registrations >= event.capacity:
+        raise HTTPException(
+            status_code=400,
+            detail="This event is full."
+        )
+
+    new_registration = Registration(
+        user_id=current_user.id,
+        event_id=event.id,
+        status=RegistrationStatus.PENDING.value
+    )
+
+    db.add(new_registration)
+    db.commit()
+    db.refresh(new_registration)
+
+    return {
+        "message": "Registration successful.",
+        "registration_id": new_registration.id
+    }
+
 
 @router.patch("/{event_id}/approve")
 def approve_event(

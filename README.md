@@ -80,15 +80,26 @@ ZeroQ is a FastAPI-powered event registration and attendance management platform
 ZeroQ/
 │
 ├── backend/
+│   ├── alembic/
+│   │   ├── versions/
+│   │   ├── env.py
+│   │   ├── README
+│   │   └── script.py.mako
+│   │
 │   ├── auth/
 │   │   ├── hashing.py
 │   │   └── jwt_handler.py
+│   │
+│   ├── constants/
+│   │   ├── event_status.py
+│   │   └── registration_status.py
 │   │
 │   ├── database/
 │   │   └── database.py
 │   │
 │   ├── dependencies/
-│   │   └── auth.py
+│   │   ├── auth.py
+│   │   └── event.py
 │   │
 │   ├── models/
 │   │   ├── user.py
@@ -105,8 +116,11 @@ ZeroQ/
 │   │   ├── event.py
 │   │   └── registration.py
 │   │
+│   ├── services/
+│   │
 │   ├── .env.example
 │   ├── .gitignore
+│   ├── alembic.ini
 │   ├── main.py
 │   └── requirements.txt
 │
@@ -228,12 +242,12 @@ http://127.0.0.1:8000/redoc
 - JWT Authentication
 - OAuth2 Login
 - Protected Routes
+- Role-Based Authorization
 
 ---
 
 ## 🚧 In Progress
 
-- Role-Based Authorization
 - Payment Verification Workflow
 
 ---

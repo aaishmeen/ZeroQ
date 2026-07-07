@@ -1,14 +1,13 @@
 from pydantic import BaseModel, Field
 
-class RegistrationCreate(BaseModel):
-    user_id: int = Field(gt=0)
-    event_id: int = Field(gt=0)
+from pydantic import BaseModel
 
 class RegistrationResponse(BaseModel):
     id: int
     user_id: int
     event_id: int
+    status: str
 
     model_config = {
         "from_attributes": True
-    }    
+    }
