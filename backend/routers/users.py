@@ -8,6 +8,8 @@ from models.user import User
 from schemas.user import UserCreate, UserResponse, Token
 from auth.hashing import hash_password, verify_password
 from auth.jwt_handler import create_access_token
+from dependencies.user import get_owned_user
+from dependencies.auth import require_role
 
 router = APIRouter(
     prefix="/users",
@@ -19,7 +21,10 @@ router = APIRouter(
     "/",
     response_model=list[UserResponse]
 )
-def get_users(db: Session = Depends(get_db)):
+def get_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
     return db.query(User).all()
 
 
@@ -126,19 +131,8 @@ def login(
     response_model=UserResponse
 )
 def get_user(
-    user_id: int,
-    db: Session = Depends(get_db)
+    user: User = Depends(get_owned_user)
 ):
-
-    user = db.query(User).filter(
-        User.id == user_id
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
 
     return user
 
@@ -148,24 +142,14 @@ def get_user(
     response_model=UserResponse
 )
 def update_user(
-    user_id: int,
     updated_user: UserCreate,
+    user: User = Depends(get_owned_user),
     db: Session = Depends(get_db)
 ):
 
-    user = db.query(User).filter(
-        User.id == user_id
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
     existing_email = db.query(User).filter(
         User.email == updated_user.email,
-        User.id != user_id
+        User.id != user.id
     ).first()
 
     if existing_email:
@@ -176,7 +160,7 @@ def update_user(
 
     existing_reg_no = db.query(User).filter(
         User.reg_no == updated_user.reg_no,
-        User.id != user_id
+        User.id != user.id
     ).first()
 
     if existing_reg_no:
@@ -201,19 +185,9 @@ def update_user(
     "/{user_id}"
 )
 def delete_user(
-    user_id: int,
+    user: User = Depends(get_owned_user),
     db: Session = Depends(get_db)
 ):
-
-    user = db.query(User).filter(
-        User.id == user_id
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
 
     db.delete(user)
     db.commit()

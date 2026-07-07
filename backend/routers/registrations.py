@@ -5,7 +5,8 @@ from models.registration import Registration
 from models.user import User
 from models.event import Event
 from schemas.registration import  RegistrationResponse
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_role
+from dependencies.registration import get_owned_registration
 
 router = APIRouter(
     tags=["Registrations"],
@@ -13,36 +14,12 @@ router = APIRouter(
 )
 
 
-@router.get(
-    "/",
-    response_model=list[RegistrationResponse]
-)
+@router.get("/", response_model=list[RegistrationResponse])
 def get_registrations(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
 ):
     return db.query(Registration).all()
-
-
-@router.get(
-    "/{registration_id}",
-    response_model=RegistrationResponse
-)
-def get_registration(
-    registration_id: int,
-    db: Session = Depends(get_db)
-):
-
-    registration = db.query(Registration).filter(
-        Registration.id == registration_id
-    ).first()
-
-    if not registration:
-        raise HTTPException(
-            status_code=404,
-            detail="Registration not found"
-        )
-
-    return registration
 
 
 @router.get(
@@ -59,21 +36,23 @@ def get_my_registrations(
     ).all()
 
 
-@router.delete("/{registration_id}")
-def delete_registration(
-    registration_id: int,
-    db: Session = Depends(get_db)
+@router.get(
+    "/{registration_id}",
+    response_model=RegistrationResponse
+)
+def get_registration(
+    registration: Registration = Depends(get_owned_registration)
 ):
 
-    registration = db.query(Registration).filter(
-        Registration.id == registration_id
-    ).first()
+    return registration
 
-    if not registration:
-        raise HTTPException(
-            status_code=404,
-            detail="Registration not found"
-        )
+
+
+@router.delete("/{registration_id}")
+def delete_registration(
+    registration: Registration = Depends(get_owned_registration),
+    db: Session = Depends(get_db)
+):
 
     db.delete(registration)
     db.commit()

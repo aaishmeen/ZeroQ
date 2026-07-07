@@ -8,11 +8,6 @@ import os
 from dotenv import load_dotenv
 
 from database.database import Base
-import models.user
-import models.event
-import models.registration
-
-from database.database import Base
 
 config = context.config
 
