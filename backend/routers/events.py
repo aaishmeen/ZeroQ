@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from schemas.event import EventsCreate, EventResponse , EventReject
+from schemas.registration import RegistrationDetailsResponse , RegistrationResponse
 from database.database import get_db
 
 from models.event import Event
@@ -106,6 +107,27 @@ def get_event(
 
     return event
 
+@router.get("/{event_id}/registrations", response_model=list[RegistrationDetailsResponse])
+def get_event_registrations(
+    event: Event = Depends(get_owned_event),
+    db: Session = Depends(get_db)
+):
+
+    registrations = db.query(Registration).filter(
+        Registration.event_id == event.id
+    ).all()
+
+    return [
+        {
+            "id": registration.id,
+            "status": registration.status,
+            "user_id": registration.user.id,
+            "student_name": registration.user.name,
+            "student_email": registration.user.email,
+            "registration_number": registration.user.reg_no
+        }
+        for registration in registrations
+    ]
 
 @router.put("/{event_id}", response_model=EventResponse)
 def update_event(

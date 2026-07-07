@@ -11,3 +11,16 @@ class RegistrationResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class RegistrationDetailsResponse(BaseModel):
+    id: int
+    status: str
+
+    user_id: int
+    student_name: str
+    student_email: str
+    registration_number: str
+
+    model_config = {
+        "from_attributes": True
+    }    

@@ -5,7 +5,7 @@ from models.registration import Registration
 from models.user import User
 from models.event import Event
 from schemas.registration import  RegistrationResponse
-
+from dependencies.auth import get_current_user
 
 router = APIRouter(
     tags=["Registrations"],
@@ -43,6 +43,21 @@ def get_registration(
         )
 
     return registration
+
+
+@router.get(
+    "/me",
+    response_model=list[RegistrationResponse]
+)
+def get_my_registrations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    return db.query(Registration).filter(
+        Registration.user_id == current_user.id
+    ).all()
+
 
 @router.delete("/{registration_id}")
 def delete_registration(
