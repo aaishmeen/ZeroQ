@@ -41,3 +41,5 @@ htmlcov/
 # Temporary Files
 tmp/
 temp/
+
+uploads/payments/

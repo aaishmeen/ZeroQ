@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from database.database import get_db
 from models.registration import Registration
 from models.user import User
-from models.event import Event
 from schemas.registration import  RegistrationResponse
 from dependencies.auth import get_current_user, require_role
 from dependencies.registration import get_owned_registration

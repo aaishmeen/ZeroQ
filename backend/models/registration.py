@@ -31,6 +31,12 @@ class Registration(Base):
         back_populates="registrations"
     )
 
+    payment = relationship(
+    "Payment",
+    back_populates="registration",
+    uselist=False
+    )
+
     status = Column(
     String,
     nullable=False,
