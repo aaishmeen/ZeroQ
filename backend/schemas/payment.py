@@ -23,3 +23,9 @@ class PaymentResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class PaymentReject(BaseModel):
+    reason: str = Field(
+        min_length=5,
+        max_length=500
+    ) 

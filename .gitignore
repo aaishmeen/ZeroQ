@@ -21,6 +21,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+
 # Python Build Files
 build/
 dist/
@@ -42,4 +43,5 @@ htmlcov/
 tmp/
 temp/
 
-uploads/payments/
+# Uploaded Files
+backend/uploads/
