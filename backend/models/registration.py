@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, ForeignKey, String
+from sqlalchemy import Column, Integer, ForeignKey, String , DateTime
 from constants.registration_status import RegistrationStatus
 from sqlalchemy.orm import relationship
 from database.database import Base
+from datetime import datetime
 
 
 class Registration(Base):
@@ -41,4 +42,20 @@ class Registration(Base):
     String,
     nullable=False,
     default=RegistrationStatus.PENDING.value
+    )
+
+    qr_token = Column(
+    String,
+    unique=True,
+    nullable=True
+    )
+
+    qr_generated_at = Column(
+        DateTime,
+        nullable=True
+    )
+
+    checked_in_at = Column(
+        DateTime,
+        nullable=True
     )

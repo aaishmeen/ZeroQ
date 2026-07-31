@@ -3,15 +3,18 @@ from sqlalchemy.orm import Session
 from database.database import get_db
 from models.registration import Registration
 from models.user import User
-from schemas.registration import  RegistrationResponse
+from schemas.registration import  RegistrationResponse, CheckInRequest
 from dependencies.auth import get_current_user, require_role
 from dependencies.registration import get_owned_registration
+from services.qr import generate_qr_image
+from constants.registration_status import RegistrationStatus
+from services.checkin import check_in
 
 router = APIRouter(
     tags=["Registrations"],
     prefix ="/registrations"
 )
-
+ 
 
 @router.get("/", response_model=list[RegistrationResponse])
 def get_registrations(
@@ -20,6 +23,24 @@ def get_registrations(
 ):
     return db.query(Registration).all()
 
+@router.get("/{registration_id}/qr")
+def get_registration_qr(
+    registration: Registration = Depends(get_owned_registration)
+):
+
+    if registration.status != RegistrationStatus.APPROVED.value:
+        raise HTTPException(
+            status_code=400,
+            detail="Registration is not approved."
+        )
+
+    if not registration.qr_token:
+        raise HTTPException(
+            status_code=404,
+            detail="QR ticket not found."
+        )
+
+    return generate_qr_image(registration)
 
 @router.get(
     "/me",
@@ -45,6 +66,26 @@ def get_registration(
 
     return registration
 
+@router.post("/check-in")
+def check_in_registration(
+    request: CheckInRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("admin", "organizer")
+    )
+):
+
+    registration = check_in(
+        request.registration_id,
+        request.token,
+        db
+    )
+
+    return {
+        "message": "Check-in successful",
+        "registration_id": registration.id,
+        "checked_in_at": registration.checked_in_at
+    }
 
 
 @router.delete("/{registration_id}")

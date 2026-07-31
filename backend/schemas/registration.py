@@ -22,3 +22,7 @@ class RegistrationDetailsResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }    
+
+class CheckInRequest(BaseModel):
+    registration_id: int
+    token: str

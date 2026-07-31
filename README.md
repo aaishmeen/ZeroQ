@@ -2,7 +2,7 @@
 
 > Because entry shouldn't take an hour.
 
-ZeroQ is a FastAPI-powered event registration and attendance management platform designed to eliminate long queues during event entry. It provides secure user authentication, event management, registrations, and serves as the foundation for QR-based ticket verification and attendance tracking.
+ZeroQ is a FastAPI-powered event registration and attendance management platform designed to eliminate long queues during event entry. It provides secure authentication, role-based access control, event management, payment verification, QR ticket generation, and QR-based attendance tracking.
 
 ---
 
@@ -12,10 +12,13 @@ ZeroQ is a FastAPI-powered event registration and attendance management platform
 - FastAPI
 - PostgreSQL
 - SQLAlchemy
+- Alembic
 - Pydantic
 - JWT Authentication
 - Passlib (bcrypt)
 - python-dotenv
+- qrcode
+- Pillow
 - Uvicorn
 
 ---
@@ -34,11 +37,26 @@ ZeroQ is a FastAPI-powered event registration and attendance management platform
 
 ---
 
+## Authentication & Authorization
+
+- JWT Token Generation
+- OAuth2 Password Flow
+- Bearer Token Authentication
+- Current User Dependency
+- Role-Based Access Control
+- Admin
+- Organizer
+- Student
+
+---
+
 ## Event Management
 
 - Create, Read, Update & Delete Events
 - Duplicate Event Validation
 - Protected Event Creation
+- Organizer Ownership Validation
+- Event Approval Workflow
 - Request & Response Schemas
 
 ---
@@ -47,20 +65,36 @@ ZeroQ is a FastAPI-powered event registration and attendance management platform
 
 - Register Users for Events
 - Prevent Duplicate Registrations
-- Validate User Existence
-- Validate Event Existence
-- Request & Response Schemas
+- Validate User & Event Existence
+- View Personal Registrations
+- Admin View of All Registrations
 
 ---
 
-## Authentication
+## Payment Verification
 
-- JWT Token Generation
-- OAuth2 Password Flow
-- Password Hashing
-- Bearer Token Authentication
-- Current User Dependency
-- Protected API Endpoints
+- Upload Payment Screenshots
+- Manual Payment Approval
+- Manual Payment Rejection
+- Registration Status Updates
+- Payment Review History
+
+---
+
+## QR Ticketing
+
+- Automatic QR Token Generation
+- Secure QR Ticket Generation
+- QR Retrieval for Approved Registrations
+- One QR Ticket Per Registration
+
+---
+
+## Attendance Management
+
+- QR-Based Check-In
+- Duplicate Scan Prevention
+- Attendance Timestamp Recording
 
 ---
 
@@ -68,6 +102,7 @@ ZeroQ is a FastAPI-powered event registration and attendance management platform
 
 - PostgreSQL Integration
 - SQLAlchemy ORM
+- Alembic Migrations
 - Foreign Keys
 - Relationships
 - Session Management
@@ -91,32 +126,21 @@ ZeroQ/
 │   │   └── jwt_handler.py
 │   │
 │   ├── constants/
-│   │   ├── event_status.py
-│   │   └── registration_status.py
 │   │
 │   ├── database/
-│   │   └── database.py
 │   │
 │   ├── dependencies/
-│   │   ├── auth.py
-│   │   └── event.py
 │   │
 │   ├── models/
-│   │   ├── user.py
-│   │   ├── event.py
-│   │   └── registration.py
 │   │
 │   ├── routers/
-│   │   ├── users.py
-│   │   ├── events.py
-│   │   └── registrations.py
 │   │
 │   ├── schemas/
-│   │   ├── user.py
-│   │   ├── event.py
-│   │   └── registration.py
 │   │
 │   ├── services/
+│   │
+│   ├── uploads/
+│   │   └── payments/
 │   │
 │   ├── .env.example
 │   ├── .gitignore
@@ -139,7 +163,10 @@ Client
 FastAPI Routers
    │
    ▼
-Authentication Layer
+Dependencies & Authentication
+   │
+   ▼
+Service Layer
    │
    ▼
 Pydantic Schemas
@@ -200,10 +227,18 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 ---
 
+## Run Database Migrations
+
+```bash
+alembic upgrade head
+```
+
+---
+
 ## Run the Server
 
 ```bash
-fastapi dev main.py
+uvicorn main:app --reload
 ```
 
 ---
@@ -231,60 +266,64 @@ http://127.0.0.1:8000/redoc
 - FastAPI Project Setup
 - PostgreSQL Integration
 - SQLAlchemy ORM
+- Alembic Migrations
 - CRUD APIs
 - Request Validation
 - Response Models
 - Database Relationships
 - User Management
-- Event Management
-- Registration Management
-- Password Hashing
 - JWT Authentication
 - OAuth2 Login
 - Protected Routes
 - Role-Based Authorization
+- Event Management
+- Registration Management
+- Payment Upload Workflow
+- Payment Approval & Rejection
+- QR Token Generation
+- QR Ticket Generation
+- QR-Based Check-In
+- Duplicate Check-In Prevention
 
 ---
 
 ## 🚧 In Progress
 
-- Payment Verification Workflow
+- Event Analytics
+- Organizer Dashboard APIs
 
 ---
 
 ## 📌 Planned
 
-- QR Ticket Generation
-- QR Code Verification
-- Attendance Tracking
-- Event Capacity Management
-- Organizer Dashboard
+- Attendance Reports
+- Ticket PDF Generation
 - Volunteer Dashboard
 - Student Dashboard
 - Admin Dashboard
-- File Uploads
 - Email Notifications
+- Payment Gateway Integration
 - Frontend
 - Deployment
 
 ---
 
-# Future Workflow
+# Current Workflow
 
 ```text
 Student
     │
-Register
+Register for Event
     │
-Upload Payment Proof
+Upload Payment Screenshot
     │
-Admin Verification
+Admin Reviews Payment
+    │
+Payment Approved
     │
 QR Ticket Generated
     │
-Event Check-In
-    │
-QR Scan
+Volunteer Scans QR
     │
 Attendance Recorded
 ```
@@ -293,6 +332,4 @@ Attendance Recorded
 
 # Project Status
 
-🚧 ZeroQ is currently under active development. The backend foundation is complete with authentication, database integration, and core CRUD functionality. Upcoming milestones include role-based access control, payment verification, QR ticket generation, and attendance management.
-
----
+🚧 ZeroQ is currently under active development. The backend now supports secure authentication, role-based authorization, event management, payment verification, QR ticket generation, and QR-based attendance tracking. Upcoming milestones include analytics, dashboards, frontend development, and deployment.

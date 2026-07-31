@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, UTC
 
 from fastapi import HTTPException
@@ -26,6 +27,9 @@ def approve_payment(
     payment.reviewed_at = datetime.now(UTC)
 
     payment.registration.status = RegistrationStatus.APPROVED.value
+
+    payment.registration.qr_token = str(uuid.uuid4())
+    payment.registration.qr_generated_at = datetime.now(UTC)
 
     try:
         db.commit()
