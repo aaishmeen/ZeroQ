@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from datetime import datetime
+from datetime import datetime,date
 
 
 class VolunteerSignupRequest(BaseModel):
@@ -155,8 +155,8 @@ class AvailableVolunteerEventResponse(BaseModel):
     approved_volunteers_count: int = 0
     banner_url: str | None = None
     status: str = "approved"
-    application_status: str  # pending, approved, rejected, none
-    openings: list[VolunteerOpeningResponse] = []
+    application_status: str
+    openings: list[VolunteerOpeningResponse] = Field(default_factory=list)
 
     model_config = {
         "from_attributes": True
