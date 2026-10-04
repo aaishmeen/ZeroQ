@@ -8,10 +8,7 @@ import os
 from dotenv import load_dotenv
 
 from database.database import Base
-from models.user import User
-from models.event import Event
-from models.registration import Registration
-from models.payment import Payment
+import models
 
 config = context.config
 
