@@ -12,7 +12,7 @@ from models.registration import Registration
 from models.user import User
 from models.event import Event
 
-from dependencies.auth import require_role
+from dependencies.auth import get_current_user, require_role
 from dependencies.payment import get_owned_payment
 
 from services.payment import approve_payment , reject_payment

@@ -15,6 +15,11 @@ config = context.config
 load_dotenv()
 
 database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    database_url = "postgresql://postgres:postgres@localhost:5432/zeroq"
+
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 config.set_main_option(
     "sqlalchemy.url",
