@@ -43,7 +43,7 @@ def get_payments(
 )
 def get_my_payments(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("student"))
+    current_user: User = Depends(get_current_user)
 ):
 
     return (
@@ -85,10 +85,10 @@ def upload_payment(
             detail="You can only upload payment for your own registration."
         )
 
-    if registration.status != RegistrationStatus.PENDING.value:
+    if registration.status not in [RegistrationStatus.PENDING.value, RegistrationStatus.REJECTED.value]:
         raise HTTPException(
             status_code=400,
-            detail="Payment can only be uploaded for pending registrations."
+            detail="Payment can only be uploaded for pending or rejected registrations."
         )
 
     existing_payment = db.query(Payment).filter(
@@ -168,12 +168,16 @@ def upload_payment(
             detail="Failed to save payment screenshot."
         )
 
+    web_screenshot_path = f"/uploads/payments/{filename}"
+
     payment = Payment(
         registration_id=registration.id,
         amount=registration.event.price,
-        screenshot_path=file_path,
+        screenshot_path=web_screenshot_path,
         transaction_id=transaction_id
     )
+
+    registration.status = RegistrationStatus.PENDING.value
 
     try:
         db.add(payment)
@@ -216,7 +220,7 @@ def approve_payment_route(
     response_model=PaymentResponse
 )
 def reject_payment_route(
-    rejection: PaymentReject,
+    rejection: PaymentReject = PaymentReject(),
     payment: Payment = Depends(get_owned_payment),
     current_user: User = Depends(require_role("admin", "organizer")),
     db: Session = Depends(get_db)

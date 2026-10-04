@@ -62,6 +62,9 @@ def reject_payment(
     payment.reviewed_by = current_user.id
     payment.reviewed_at = datetime.now(UTC)
 
+    if payment.registration:
+        payment.registration.status = RegistrationStatus.REJECTED.value
+
     try:
         db.commit()
         db.refresh(payment)

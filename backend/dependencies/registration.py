@@ -22,17 +22,15 @@ def get_owned_registration(
             detail="Registration not found."
         )
 
-    if current_user.role == "admin":
+    if current_user.role in ("admin", "superadmin"):
         return registration
 
-    if (
-        current_user.role == "student"
-        and registration.user_id == current_user.id
-    ):
+    if registration.user_id == current_user.id:
         return registration
 
     if (
         current_user.role == "organizer"
+        and registration.event
         and registration.event.owner_id == current_user.id
     ):
         return registration

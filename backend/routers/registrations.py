@@ -4,7 +4,7 @@ from database.database import get_db
 from models.registration import Registration
 from models.user import User
 from schemas.registration import  RegistrationResponse, CheckInRequest
-from dependencies.auth import get_current_user, require_role
+from dependencies.auth import get_current_user, require_role, require_volunteer_access
 from dependencies.registration import get_owned_registration
 from services.qr import generate_qr_image
 from constants.registration_status import RegistrationStatus
@@ -21,7 +21,7 @@ def get_registrations(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin"))
 ):
-    return db.query(Registration).all()
+    return db.query(Registration).order_by(Registration.id.desc()).all()
 
 @router.get("/{registration_id}/qr")
 def get_registration_qr(
@@ -71,21 +71,35 @@ def check_in_registration(
     request: CheckInRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_role("admin", "organizer")
+        require_volunteer_access
     )
 ):
 
     registration = check_in(
         request.registration_id,
         request.token,
-        db
+        db,
+        current_user=current_user
     )
 
     return {
-        "message": "Check-in successful",
+        "message": "ENTRY VERIFIED",
         "registration_id": registration.id,
+        "student_name": registration.user.name if registration.user else "Attendee",
+        "event_title": registration.event.title if registration.event else "Event",
         "checked_in_at": registration.checked_in_at
     }
+
+
+@router.post("/{registration_id}/cancel", response_model=RegistrationResponse)
+def cancel_registration(
+    registration: Registration = Depends(get_owned_registration),
+    db: Session = Depends(get_db)
+):
+    registration.status = RegistrationStatus.CANCELLED.value
+    db.commit()
+    db.refresh(registration)
+    return registration
 
 
 @router.delete("/{registration_id}")

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class PaymentCreate(BaseModel):
@@ -26,6 +26,15 @@ class PaymentResponse(BaseModel):
 
 class PaymentReject(BaseModel):
     reason: str = Field(
-        min_length=5,
+        default="Payment verification rejected",
         max_length=500
-    ) 
+    )
+
+    @field_validator("reason", mode="before")
+    def validate_reason(cls, v):
+        if not v or not str(v).strip():
+            return "Payment verification rejected"
+        val = str(v).strip()
+        if len(val) < 3:
+            return f"Payment verification rejected: {val}"
+        return val 

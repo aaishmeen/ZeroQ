@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String , DateTime
+from sqlalchemy import Column, Integer, ForeignKey, String , DateTime, UniqueConstraint
 from constants.registration_status import RegistrationStatus
 from sqlalchemy.orm import relationship
 from database.database import Base
@@ -7,6 +7,9 @@ from datetime import datetime
 
 class Registration(Base):
     __tablename__ = "registrations"
+    __table_args__ = (
+        UniqueConstraint("user_id", "event_id", name="uq_user_event_registration"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -58,4 +61,4 @@ class Registration(Base):
     checked_in_at = Column(
         DateTime,
         nullable=True
-    )
+    )

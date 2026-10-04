@@ -1,5 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from sqlalchemy.orm import Session
+from datetime import datetime, UTC
+import os
+import shutil
+import uuid
 
 from schemas.event import EventsCreate, EventResponse , EventReject
 from schemas.registration import RegistrationDetailsResponse , RegistrationResponse
@@ -27,7 +31,11 @@ def get_events(
     db: Session = Depends(get_db)
 ):
     return db.query(Event).filter(
-        Event.status == EventStatus.APPROVED.value
+        Event.status.in_([
+            "APPROVED", "UPCOMING", "ACTIVE", "COMPLETED",
+            "approved", "upcoming", "active", "completed",
+            "Approved", "Upcoming", "Active", "Completed"
+        ])
     ).all()
 
 @router.get("/pending", response_model=list[EventResponse])
@@ -36,7 +44,7 @@ def get_pending_events(
     current_user: User = Depends(require_role("admin"))
 ):
     return db.query(Event).filter(
-        Event.status == EventStatus.PENDING.value
+        Event.status.in_(["PENDING", "pending", "Pending"])
     ).all()
 
 
@@ -66,6 +74,7 @@ def create_event(
         date=event.date,
         capacity=event.capacity,
         price=event.price,
+        volunteers_limit=event.volunteers_limit,
         owner_id=current_user.id,
         status=EventStatus.DRAFT.value
     )
@@ -114,7 +123,8 @@ def get_event_registrations(
 ):
 
     registrations = db.query(Registration).filter(
-        Registration.event_id == event.id
+        Registration.event_id == event.id,
+        Registration.status == RegistrationStatus.APPROVED.value
     ).all()
 
     return [
@@ -156,11 +166,101 @@ def update_event(
     event.date = updated_event.date
     event.capacity = updated_event.capacity
     event.price = updated_event.price
+    event.volunteers_limit = updated_event.volunteers_limit
 
     db.commit()
     db.refresh(event)
 
     return event
+
+
+@router.post("/{event_id}/activate", response_model=EventResponse)
+def activate_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "organizer"))
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if current_user.role != "admin" and event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this event")
+
+    event.status = EventStatus.ACTIVE.value
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+@router.post("/{event_id}/complete", response_model=EventResponse)
+def complete_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "organizer"))
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if current_user.role != "admin" and event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this event")
+
+    event.status = EventStatus.COMPLETED.value
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+@router.post("/{event_id}/upload-banner")
+def upload_event_banner(
+    event_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "organizer"))
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if current_user.role != "admin" and event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this event")
+
+    os.makedirs(f"uploads/events/{event_id}", exist_ok=True)
+    file_extension = file.filename.split(".")[-1] if "." in file.filename else "png"
+    filename = f"banner_{uuid.uuid4().hex}.{file_extension}"
+    file_path = f"uploads/events/{event_id}/{filename}"
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    event.banner_url = f"/{file_path}"
+    db.commit()
+    
+    return {"message": "Banner uploaded successfully", "banner_url": event.banner_url}
+
+@router.post("/{event_id}/upload-qr")
+def upload_event_qr(
+    event_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "organizer"))
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if current_user.role != "admin" and event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this event")
+
+    os.makedirs(f"uploads/events/{event_id}", exist_ok=True)
+    file_extension = file.filename.split(".")[-1] if "." in file.filename else "png"
+    filename = f"qr_{uuid.uuid4().hex}.{file_extension}"
+    file_path = f"uploads/events/{event_id}/{filename}"
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    event.payment_qr_url = f"/{file_path}"
+    db.commit()
+    
+    return {"message": "QR uploaded successfully", "payment_qr_url": event.payment_qr_url}
 
 
 @router.delete("/{event_id}")
@@ -206,10 +306,17 @@ def register_for_event(
     current_user: User = Depends(get_current_user)
 ):
 
-    if current_user.role != "student":
+    from models.volunteer import VolunteerApplication
+    is_student_capable = (
+        current_user.role in ["student", "volunteer"] or
+        bool(current_user.reg_no) or
+        db.query(VolunteerApplication).filter(VolunteerApplication.user_id == current_user.id).first() is not None or
+        db.query(Registration).filter(Registration.user_id == current_user.id).first() is not None
+    )
+    if not is_student_capable:
         raise HTTPException(
             status_code=403,
-            detail="Only students can register for events."
+            detail="Registration requires student/participant capability."
         )
 
     event = db.query(Event).filter(
@@ -222,7 +329,7 @@ def register_for_event(
             detail="Event not found."
         )
 
-    if event.status != EventStatus.APPROVED.value:
+    if (event.status or "").upper() not in ["APPROVED", "ACTIVE", "UPCOMING"]:
         raise HTTPException(
             status_code=400,
             detail="Registration is only allowed for approved events."
@@ -249,10 +356,17 @@ def register_for_event(
             detail="This event is full."
         )
 
+    is_free = (event.price <= 0)
+    initial_status = RegistrationStatus.APPROVED.value if is_free else RegistrationStatus.PENDING.value
+    qr_token = str(uuid.uuid4()) if is_free else None
+    qr_generated_at = datetime.now(UTC) if is_free else None
+
     new_registration = Registration(
         user_id=current_user.id,
         event_id=event.id,
-        status=RegistrationStatus.PENDING.value
+        status=initial_status,
+        qr_token=qr_token,
+        qr_generated_at=qr_generated_at
     )
 
     db.add(new_registration)
@@ -260,8 +374,9 @@ def register_for_event(
     db.refresh(new_registration)
 
     return {
-        "message": "Registration successful.",
-        "registration_id": new_registration.id
+        "message": "Registration successful and confirmed!" if is_free else "Registration successful.",
+        "registration_id": new_registration.id,
+        "is_free": is_free
     }
 
 

@@ -24,5 +24,5 @@ class RegistrationDetailsResponse(BaseModel):
     }    
 
 class CheckInRequest(BaseModel):
-    registration_id: int
+    registration_id: int | None = None
     token: str

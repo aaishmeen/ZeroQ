@@ -8,6 +8,7 @@ class EventsCreate(BaseModel):
     date:date
     capacity:int = Field(gt=0)
     price:float = Field(ge=0)
+    volunteers_limit: int = Field(default=10, ge=1)
 
 class EventResponse(BaseModel):
     id: int
@@ -17,9 +18,12 @@ class EventResponse(BaseModel):
     date: date
     capacity: int
     price: float
+    volunteers_limit: int = 10
     owner_id: int
     status: str
     rejection_reason: str | None
+    banner_url: str | None = None
+    payment_qr_url: str | None = None
 
     model_config = {
         "from_attributes": True
