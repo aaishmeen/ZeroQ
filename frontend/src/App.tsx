@@ -150,10 +150,7 @@ const MainAppContent: React.FC = () => {
               <div className="bg-[#0B132B] text-white py-10 px-4 border-b border-slate-800">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
-                    <span className="text-[11px] uppercase tracking-wider font-bold text-[#06B6D4] bg-white/10 px-3 py-1 rounded-full border border-white/15 backdrop-blur-md">
-                      Participant Workspace
-                    </span>
-                    <h1 className="text-3xl sm:text-4xl font-serif-heading font-bold mt-2">Discover Campus Events</h1>
+                    <h1 className="text-3xl sm:text-4xl font-serif-heading font-bold">Discover Campus Events</h1>
                     <p className="text-xs sm:text-sm text-slate-300 mt-1">
                       Browse approved events, reserve tickets, and activate your digital QR passbook.
                     </p>

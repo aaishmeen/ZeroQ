@@ -12,7 +12,6 @@ import {
   Calendar,
   CreditCard,
   Scan,
-  Sparkles,
   Layers,
   Shield,
 } from 'lucide-react';
@@ -47,10 +46,6 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onGetStarted }) 
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-[#06B6D4] text-xs font-bold border border-white/15 backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Guided Operational Workflow</span>
-          </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif-heading font-bold text-white tracking-tight">
             How ZeroQ Works
           </h1>

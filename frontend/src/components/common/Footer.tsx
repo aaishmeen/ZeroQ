@@ -1,32 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ZeroQLogo } from './ZeroQLogo';
-import { getHealthApi } from '../../api/auth';
-import { ShieldCheck, Calendar, Lock, X } from 'lucide-react';
+import { ShieldCheck, Calendar, X } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (section: string) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const [systemStatus, setSystemStatus] = useState<'ONLINE' | 'OFFLINE' | 'CHECKING'>('CHECKING');
   const [activePolicyModal, setActivePolicyModal] = useState<'privacy' | 'terms' | 'refund' | null>(null);
-
-  useEffect(() => {
-    getHealthApi()
-      .then((res) => {
-        if (res.status === 'healthy') {
-          setSystemStatus('ONLINE');
-        } else {
-          setSystemStatus('OFFLINE');
-        }
-      })
-      .catch(() => setSystemStatus('OFFLINE'));
-  }, []);
 
   return (
     <footer className="bg-[#0B132B] text-white pt-14 pb-10 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-12 border-b border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-12 border-b border-slate-800">
           {/* Brand Column */}
           <div className="space-y-4 md:col-span-1">
             <ZeroQLogo variant="light" size="md" />
@@ -101,42 +87,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
             </ul>
-          </div>
-
-          {/* System Status */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#06B6D4] mb-4 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />
-              System Status
-            </h4>
-
-            <div className="bg-[#0F172A] border border-slate-700/80 rounded-2xl p-4 space-y-2 backdrop-blur-md">
-              <div className="flex items-center justify-between text-xs text-slate-300">
-                <span>Gate API & Engine</span>
-                <span className="flex h-2.5 w-2.5 relative">
-                  {systemStatus === 'ONLINE' && (
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                  )}
-                  <span
-                    className={`inline-flex rounded-full h-2.5 w-2.5 ${
-                      systemStatus === 'ONLINE' ? 'bg-[#06B6D4]' : 'bg-amber-400'
-                    }`}
-                  />
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span
-                  className={`text-sm font-bold tracking-wide ${
-                    systemStatus === 'ONLINE' ? 'text-[#06B6D4]' : 'text-amber-400'
-                  }`}
-                >
-                  {systemStatus === 'ONLINE' ? 'OPERATIONAL' : 'CHECKING STATUS'}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 leading-normal">
-                Real-time connection to ZeroQ FastAPI backend service.
-              </p>
-            </div>
           </div>
         </div>
 

@@ -8,7 +8,6 @@ import {
   Scan,
   Users,
   Shield,
-  Sparkles,
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -35,11 +34,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-[#06B6D4] text-xs font-bold border border-white/15 backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Platform Overview</span>
-          </div>
-          
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif-heading font-bold text-white tracking-tight leading-[1.1]">
             Built to Make Campus Events<br className="hidden sm:inline" /> Simpler.
           </h1>
