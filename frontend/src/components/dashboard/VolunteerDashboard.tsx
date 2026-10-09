@@ -963,6 +963,68 @@ export const VolunteerDashboard: React.FC = () => {
                 </div>
               )}
 
+              {/* Volunteer Details & Credentials Panel */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#1D4ED8]" />
+                  Your Volunteer Credentials & Assignment
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
+                    <span className="text-slate-400 block text-[10px] font-bold">Volunteer Identifier</span>
+                    <strong className="text-[#1D4ED8] text-xs font-bold">{volunteerIdDisplay}</strong>
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
+                    <span className="text-slate-400 block text-[10px] font-bold">Assigned Gate</span>
+                    <strong className="text-[#0F172A] text-xs font-bold">
+                      {currentAssignment?.position || 'Unassigned'}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* About & Experience / Bio Form */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
+                  <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
+                    Experience & Bio
+                  </h4>
+
+                  {bioSuccessMsg && (
+                    <div className="p-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>{bioSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  {bioErrorMsg && (
+                    <div className="p-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                      <span>{bioErrorMsg}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSaveBio} className="space-y-2">
+                    <textarea
+                      rows={3}
+                      placeholder="Brief note on prior event operations experience..."
+                      value={bioInput}
+                      onChange={(e) => setBioInput(e.target.value)}
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={isSavingBio}
+                        className="px-3.5 py-1.5 bg-[#1D4ED8] hover:bg-[#1e40af] text-white font-bold text-xs rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        {isSavingBio ? 'Saving...' : 'Save Bio'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
                   Available Volunteer Opportunities
@@ -1243,60 +1305,6 @@ export const VolunteerDashboard: React.FC = () => {
                       </button>
                     )}
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
-                    <span className="text-slate-400 block text-[10px] font-bold">Volunteer Identifier</span>
-                    <strong className="text-[#1D4ED8] text-xs font-bold">{volunteerIdDisplay}</strong>
-                  </div>
-
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
-                    <span className="text-slate-400 block text-[10px] font-bold">Assigned Gate</span>
-                    <strong className="text-[#0F172A] text-xs font-bold">
-                      {currentAssignment?.position || 'Unassigned'}
-                    </strong>
-                  </div>
-                </div>
-
-                {/* About & Skills */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
-                  <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
-                    Experience & Bio
-                  </h4>
-
-                  {bioSuccessMsg && (
-                    <div className="p-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>{bioSuccessMsg}</span>
-                    </div>
-                  )}
-
-                  {bioErrorMsg && (
-                    <div className="p-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                      <span>{bioErrorMsg}</span>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSaveBio} className="space-y-2">
-                    <textarea
-                      rows={3}
-                      placeholder="Brief note on prior event operations experience..."
-                      value={bioInput}
-                      onChange={(e) => setBioInput(e.target.value)}
-                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
-                    />
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={isSavingBio}
-                        className="px-3.5 py-1.5 bg-[#1D4ED8] hover:bg-[#1e40af] text-white font-bold text-xs rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
-                      >
-                        {isSavingBio ? 'Saving...' : 'Save Bio'}
-                      </button>
-                    </div>
-                  </form>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
