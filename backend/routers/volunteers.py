@@ -142,12 +142,14 @@ def get_volunteer_openings(
     """
     query = db.query(VolunteerOpening)
 
-    if event_id:
-        query = query.filter(VolunteerOpening.event_id == event_id)
-    elif current_user and current_user.role == "organizer":
+    if current_user and current_user.role == "organizer":
         owned_events = db.query(Event.id).filter(Event.owner_id == current_user.id).all()
         owned_ids = [e[0] for e in owned_events]
         query = query.filter(VolunteerOpening.event_id.in_(owned_ids))
+        if event_id:
+            query = query.filter(VolunteerOpening.event_id == event_id)
+    elif event_id:
+        query = query.filter(VolunteerOpening.event_id == event_id)
     elif not current_user or current_user.role not in ["admin", "superadmin"]:
         # Public / student view: show open openings
         query = query.filter(VolunteerOpening.status == "open")
@@ -389,12 +391,14 @@ def get_volunteer_requests(
     """
     query = db.query(VolunteerApplication)
 
-    if event_id:
-        query = query.filter(VolunteerApplication.event_id == event_id)
-    elif current_user.role == "organizer":
+    if current_user.role == "organizer":
         owned_events = db.query(Event.id).filter(Event.owner_id == current_user.id).all()
         owned_ids = [e[0] for e in owned_events]
         query = query.filter(VolunteerApplication.event_id.in_(owned_ids))
+        if event_id:
+            query = query.filter(VolunteerApplication.event_id == event_id)
+    elif event_id:
+        query = query.filter(VolunteerApplication.event_id == event_id)
 
     apps = query.order_by(VolunteerApplication.applied_at.desc()).all()
 
@@ -527,12 +531,14 @@ def get_approved_volunteers(
     """
     query = db.query(VolunteerApplication).filter(VolunteerApplication.status == "approved")
 
-    if event_id:
-        query = query.filter(VolunteerApplication.event_id == event_id)
-    elif current_user.role == "organizer":
+    if current_user.role == "organizer":
         owned_events = db.query(Event.id).filter(Event.owner_id == current_user.id).all()
         owned_ids = [e[0] for e in owned_events]
         query = query.filter(VolunteerApplication.event_id.in_(owned_ids))
+        if event_id:
+            query = query.filter(VolunteerApplication.event_id == event_id)
+    elif event_id:
+        query = query.filter(VolunteerApplication.event_id == event_id)
 
     approved_apps = query.order_by(VolunteerApplication.applied_at.desc()).all()
 
