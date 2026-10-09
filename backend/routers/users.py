@@ -180,7 +180,11 @@ def _build_user_response(user: User, db: Session) -> UserResponse:
             VolunteerAssignment.status == "active"
         ).first()
 
-    is_vol = bool(approved_app or approved_assign or user.role in ["volunteer", "admin", "superadmin"])
+    if user.role in ["admin", "superadmin", "organizer"]:
+        is_vol = False
+    else:
+        is_vol = bool(user.role == "volunteer" or approved_app or approved_assign)
+
     res = UserResponse.model_validate(user)
     res.is_approved_volunteer = is_vol
     return res

@@ -111,7 +111,7 @@ const MainAppContent: React.FC = () => {
 
       {/* Main Body Dynamic Views */}
       <main className="flex-1 pt-[var(--navbar-height)]">
-        {activeSection === 'volunteer' && isAuthenticated && user && (
+        {activeSection === 'volunteer' && isAuthenticated && user && user.role !== 'admin' && user.role !== 'superadmin' && user.role !== 'organizer' && (
           user.role === 'volunteer' ||
           user.is_approved_volunteer === true
         ) ? (
