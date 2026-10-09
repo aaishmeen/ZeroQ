@@ -153,17 +153,28 @@ export const StudentDashboard: React.FC = () => {
             </span>
             <span
               className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 border ${
-                isApproved
+                reg.checked_in_at
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : isApproved
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   : isPending
                   ? 'bg-amber-50 text-amber-700 border-amber-200'
                   : 'bg-red-50 text-red-700 border-red-200'
               }`}
             >
-              {isApproved && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
-              {isPending && <Clock className="w-3 h-3 text-amber-600" />}
-              {isRejected && <XCircle className="w-3 h-3 text-red-600" />}
-              {reg.status}
+              {reg.checked_in_at ? (
+                <>
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Checked In
+                </>
+              ) : (
+                <>
+                  {isApproved && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                  {isPending && <Clock className="w-3 h-3 text-amber-600" />}
+                  {isRejected && <XCircle className="w-3 h-3 text-red-600" />}
+                  {reg.status}
+                </>
+              )}
             </span>
           </div>
 

@@ -42,6 +42,9 @@ export interface Registration {
   user_id: number;
   event_id: number;
   status: RegistrationStatus;
+  qr_token?: string | null;
+  qr_generated_at?: string | null;
+  checked_in_at?: string | null;
 }
 
 export interface RegistrationDetails {
