@@ -111,85 +111,122 @@ const MainAppContent: React.FC = () => {
 
       {/* Main Body Dynamic Views */}
       <main className="flex-1 pt-[var(--navbar-height)]">
-        {activeSection === 'volunteer' && isAuthenticated && user && user.role !== 'admin' && user.role !== 'superadmin' && user.role !== 'organizer' && (
-          user.role === 'volunteer' ||
-          user.is_approved_volunteer === true
-        ) ? (
-          <VolunteerDashboard />
-        ) : activeSection === 'dashboard' && isAuthenticated && user ? (
-          user.role === 'admin' && user.status === 'pending' ? (
-            <PendingAdminView />
-          ) : user.role === 'admin' ? (
-            <AdminDashboard />
-          ) : user.role === 'organizer' ? (
-            <OrganizerDashboard />
-          ) : user.role === 'superadmin' ? (
-            <SuperadminDashboard />
-          ) : user.role === 'volunteer' ? (
-            <VolunteerDashboard />
-          ) : (
-            <StudentDashboard />
-          )
-        ) : activeSection === 'events' && isAuthenticated ? (
-          user && user.role !== 'student' && user.role !== 'volunteer' && !user.is_approved_volunteer && !user.reg_no ? (
-            user.role === 'admin' && user.status === 'pending' ? (
-              <PendingAdminView />
-            ) : user.role === 'admin' ? (
-              <AdminDashboard />
-            ) : user.role === 'organizer' ? (
-              <OrganizerDashboard />
-            ) : (
-              <SuperadminDashboard />
-            )
-          ) : (
-            /* Dedicated Authenticated Discover Events Page for Students */
-            <div>
-              <div className="bg-[#0B132B] text-white py-10 px-4 border-b border-slate-800">
-                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div>
-                    <h1 className="text-3xl sm:text-4xl font-serif-heading font-bold">Discover Campus Events</h1>
-                    <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                      Browse approved events, reserve tickets, and activate your digital QR passbook.
-                    </p>
+        {(() => {
+          if (isAuthenticated && user) {
+            // Administrative & Organizer Accounts: Always route to their Dashboard except for explicit info pages
+            if (user.role === 'admin' || user.role === 'superadmin' || user.role === 'organizer') {
+              if (activeSection === 'how-it-works') {
+                return <HowItWorksPage onGetStarted={() => setIsRegisterOpen(true)} />;
+              }
+              if (activeSection === 'about') {
+                return (
+                  <AboutPage
+                    onGetStarted={() => setIsRegisterOpen(true)}
+                    onExploreEvents={() => setActiveSection('dashboard')}
+                    isAuthenticated={isAuthenticated}
+                  />
+                );
+              }
+              if (user.role === 'admin') {
+                return user.status === 'pending' ? <PendingAdminView /> : <AdminDashboard />;
+              }
+              if (user.role === 'organizer') {
+                return <OrganizerDashboard />;
+              }
+              return <SuperadminDashboard />;
+            }
+
+            // Student & Volunteer Accounts
+            if (activeSection === 'volunteer' && (user.role === 'volunteer' || user.is_approved_volunteer)) {
+              return <VolunteerDashboard />;
+            }
+
+            if (activeSection === 'dashboard') {
+              return user.role === 'volunteer' ? <VolunteerDashboard /> : <StudentDashboard />;
+            }
+
+            if (activeSection === 'events') {
+              return (
+                <div>
+                  <div className="bg-[#0B132B] text-white py-10 px-4 border-b border-slate-800">
+                    <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div>
+                        <h1 className="text-3xl sm:text-4xl font-serif-heading font-bold">Discover Campus Events</h1>
+                        <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                          Browse approved events, reserve tickets, and activate your digital QR passbook.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveSection('dashboard')}
+                        className="px-5 py-2.5 bg-gradient-to-r from-[#FF5E36] to-[#F97316] hover:from-[#ea522a] hover:to-[#e06109] text-white font-bold text-xs rounded-full transition-all shrink-0 cursor-pointer shadow-md hover:shadow-orange-500/20"
+                      >
+                        My Passbook & Tickets
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setActiveSection('dashboard')}
-                    className="px-5 py-2.5 bg-gradient-to-r from-[#FF5E36] to-[#F97316] hover:from-[#ea522a] hover:to-[#e06109] text-white font-bold text-xs rounded-full transition-all shrink-0 cursor-pointer shadow-md hover:shadow-orange-500/20"
-                  >
-                    My Passbook & Tickets
-                  </button>
+                  <EventDiscoverySection 
+                    onRegisterEvent={handleRegisterEvent} 
+                    onContinuePayment={handleContinuePayment} 
+                    onApplyVolunteer={(ev) => {
+                      if (user && (user.role === 'volunteer' || user.is_approved_volunteer)) {
+                        setActiveSection('volunteer');
+                      } else {
+                        handleOpenBecomeVolunteer(ev.id);
+                      }
+                    }}
+                  />
                 </div>
-              </div>
-              <EventDiscoverySection 
-                onRegisterEvent={handleRegisterEvent} 
-                onContinuePayment={handleContinuePayment} 
-                onApplyVolunteer={(ev) => {
-                  if (user && (user.role === 'volunteer' || user.is_approved_volunteer)) {
-                    setActiveSection('volunteer');
-                  } else {
-                    handleOpenBecomeVolunteer(ev.id);
-                  }
-                }}
+              );
+            }
+
+            if (activeSection === 'how-it-works') {
+              return <HowItWorksPage onGetStarted={() => setIsRegisterOpen(true)} />;
+            }
+
+            if (activeSection === 'about') {
+              return (
+                <AboutPage
+                  onGetStarted={() => setIsRegisterOpen(true)}
+                  onExploreEvents={() => setActiveSection('events')}
+                  isAuthenticated={isAuthenticated}
+                />
+              );
+            }
+
+            return (
+              <HeroSection
+                onGetStarted={() => setIsRegisterOpen(true)}
+                onExploreEvents={() => setActiveSection('events')}
+                onHowItWorks={() => setActiveSection('how-it-works')}
+                isAuthenticated={isAuthenticated}
               />
-            </div>
-          )
-        ) : activeSection === 'how-it-works' ? (
-          <HowItWorksPage onGetStarted={() => setIsRegisterOpen(true)} />
-        ) : activeSection === 'about' ? (
-          <AboutPage
-            onGetStarted={() => setIsRegisterOpen(true)}
-            onExploreEvents={() => (isAuthenticated ? setActiveSection('events') : setIsLoginOpen(true))}
-            isAuthenticated={isAuthenticated}
-          />
-        ) : (
-          /* Public Unauthenticated Landing View / Home */
-          <HeroSection
-            onGetStarted={() => setIsRegisterOpen(true)}
-            onExploreEvents={() => (isAuthenticated ? setActiveSection('events') : setIsLoginOpen(true))}
-            onHowItWorks={() => setActiveSection('how-it-works')}
-            isAuthenticated={isAuthenticated}
-          />
-        )}
+            );
+          }
+
+          // Unauthenticated Public Visitors
+          if (activeSection === 'how-it-works') {
+            return <HowItWorksPage onGetStarted={() => setIsRegisterOpen(true)} />;
+          }
+
+          if (activeSection === 'about') {
+            return (
+              <AboutPage
+                onGetStarted={() => setIsLoginOpen(true)}
+                onExploreEvents={() => setIsLoginOpen(true)}
+                isAuthenticated={false}
+              />
+            );
+          }
+
+          return (
+            <HeroSection
+              onGetStarted={() => setIsRegisterOpen(true)}
+              onExploreEvents={() => setIsLoginOpen(true)}
+              onHowItWorks={() => setActiveSection('how-it-works')}
+              isAuthenticated={false}
+            />
+          );
+        })()}
       </main>
 
       {/* Auth Modals */}
