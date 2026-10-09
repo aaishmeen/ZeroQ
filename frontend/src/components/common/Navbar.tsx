@@ -216,23 +216,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                 </div>
 
-                <button
-                  onClick={() => setActiveSection('dashboard')}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
-                    activeSection === 'dashboard'
-                      ? 'bg-gradient-to-r from-[#1D4ED8] to-[#2563EB] text-white shadow-md'
-                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-                  }`}
-                >
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  Dashboard
-                </button>
+                {user.role !== 'volunteer' && (
+                  <button
+                    onClick={() => setActiveSection('dashboard')}
+                    className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      activeSection === 'dashboard'
+                        ? 'bg-gradient-to-r from-[#1D4ED8] to-[#2563EB] text-white shadow-md'
+                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                    }`}
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    Dashboard
+                  </button>
+                )}
 
                 {hasVolunteerAccess && (
                   <button
                     onClick={() => setActiveSection('volunteer')}
                     className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
-                      activeSection === 'volunteer'
+                      activeSection === 'volunteer' || (user.role === 'volunteer' && activeSection === 'dashboard')
                         ? 'bg-gradient-to-r from-[#FF5E36] to-[#F97316] text-white shadow-md'
                         : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
                     }`}

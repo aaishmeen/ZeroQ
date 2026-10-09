@@ -166,7 +166,13 @@ const MainAppContent: React.FC = () => {
               <EventDiscoverySection 
                 onRegisterEvent={handleRegisterEvent} 
                 onContinuePayment={handleContinuePayment} 
-                onApplyVolunteer={(ev) => handleOpenBecomeVolunteer(ev.id)}
+                onApplyVolunteer={(ev) => {
+                  if (user && (user.role === 'volunteer' || user.is_approved_volunteer)) {
+                    setActiveSection('volunteer');
+                  } else {
+                    handleOpenBecomeVolunteer(ev.id);
+                  }
+                }}
               />
             </div>
           )

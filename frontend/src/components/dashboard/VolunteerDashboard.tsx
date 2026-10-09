@@ -1419,34 +1419,71 @@ export const VolunteerDashboard: React.FC = () => {
       {/* VOLUNTEER APPLICATION MODAL */}
       {selectedApplyEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-md space-y-3 relative shadow-xl">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-lg space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setSelectedApplyEvent(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100"
               aria-label="Close application dialog"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
 
-            <div>
+            <div className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF5E36] bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
-                Volunteer Application
+                Volunteer Position & Event Application
               </span>
-              <h3 className="text-base font-bold text-[#0F172A] mt-1">
+              <h3 className="text-lg font-bold text-[#0F172A] leading-snug">
                 {selectedApplyOpening ? selectedApplyOpening.role : 'General Volunteer'} — {selectedApplyEvent.title}
               </h3>
-              <p className="text-xs text-slate-500">
-                Venue: {selectedApplyEvent.venue} • Date: {selectedApplyEvent.date}
-              </p>
-              {selectedApplyOpening?.description && (
-                <p className="text-xs text-slate-600 mt-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  {selectedApplyOpening.description}
+
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Venue / Gate</span>
+                  <span className="font-semibold text-[#0F172A]">
+                    {selectedApplyOpening?.gate_area ? `${selectedApplyEvent.venue} (${selectedApplyOpening.gate_area})` : selectedApplyEvent.venue}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Event Date</span>
+                  <span className="font-semibold text-[#0F172A]">{selectedApplyEvent.date}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Available Slots</span>
+                  <span className="font-semibold text-[#FF5E36]">
+                    {selectedApplyOpening
+                      ? `${selectedApplyOpening.remaining_count} remaining (${selectedApplyOpening.approved_count}/${selectedApplyOpening.volunteers_needed} filled)`
+                      : `${selectedApplyEvent.volunteers_limit || 10} limit`}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Deadline</span>
+                  <span className="font-semibold text-[#0F172A]">
+                    {selectedApplyOpening?.deadline || 'Until capacity filled'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Responsibilities & Description */}
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Role Responsibilities</h4>
+                <p className="text-xs text-slate-600 bg-blue-50/60 p-3 rounded-xl border border-blue-100 leading-relaxed">
+                  {selectedApplyOpening?.description || selectedApplyEvent.description || 'Assist event organizers with attendee entry scanning, crowd management, and venue coordination.'}
                 </p>
-              )}
+              </div>
+
+              {/* Eligibility & Instructions */}
+              <div className="space-y-1 text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="font-bold text-[#0F172A] block text-[11px] uppercase tracking-wider">Eligibility & Instructions</span>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+                  <li>Open to approved campus volunteers and registered students.</li>
+                  <li>Upon submission, the event organizer will review your application.</li>
+                  <li>Once approved, your QR pass scanner and gate shift assignment will activate.</li>
+                </ul>
+              </div>
             </div>
 
-            <form onSubmit={submitApplicationModal} className="space-y-3">
-              <div className="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+            <form onSubmit={submitApplicationModal} className="space-y-3 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                 {user?.avatar_url ? (
                   <img
                     src={getFileUrl(user.avatar_url)}
@@ -1461,7 +1498,7 @@ export const VolunteerDashboard: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-[#0F172A]">{user?.name}</h4>
                   <p className="text-[10px] text-slate-400">{user?.email}</p>
-                  <p className="text-[10px] font-bold text-[#1D4ED8]">ID: {volunteerIdDisplay}</p>
+                  <p className="text-[10px] font-bold text-[#1D4ED8]">Volunteer ID: {volunteerIdDisplay}</p>
                 </div>
               </div>
 
@@ -1470,28 +1507,28 @@ export const VolunteerDashboard: React.FC = () => {
                   Relevant Experience (Optional)
                 </label>
                 <textarea
-                  rows={3}
-                  placeholder="Brief note on prior event or customer service experience..."
+                  rows={2}
+                  placeholder="Brief note on prior event handling, customer service, or volunteer experience..."
                   value={applyExperience}
                   onChange={(e) => setApplyExperience(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-1 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setSelectedApplyEvent(null)}
-                  className="px-3.5 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={applyingEventId === selectedApplyEvent.id}
-                  className="px-4 py-1.5 bg-[#1D4ED8] hover:bg-[#1e40af] text-white text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer shadow-xs"
+                  className="px-5 py-2 bg-gradient-to-r from-[#FF5E36] to-[#F97316] hover:from-[#ea522a] hover:to-[#e06109] text-white text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer shadow-md transition-all"
                 >
-                  {applyingEventId === selectedApplyEvent.id ? 'Submitting...' : 'Submit'}
+                  {applyingEventId === selectedApplyEvent.id ? 'Submitting Application...' : 'Submit Application'}
                 </button>
               </div>
             </form>
