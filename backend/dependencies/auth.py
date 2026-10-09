@@ -102,7 +102,13 @@ def require_volunteer_access(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role in ["volunteer", "admin", "superadmin", "organizer"]:
+    if current_user.role in ["admin", "superadmin", "organizer"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Student Volunteer Portal access is restricted to students and volunteers."
+        )
+
+    if current_user.role in ["volunteer", "student"]:
         return current_user
 
     from models import VolunteerApplication, VolunteerAssignment
@@ -122,5 +128,5 @@ def require_volunteer_access(
 
     raise HTTPException(
         status_code=403,
-        detail="Volunteer Portal access is restricted to approved volunteers only."
+        detail="Volunteer Portal access is restricted to approved volunteers and student applicants."
     )
