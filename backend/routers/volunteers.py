@@ -1015,8 +1015,13 @@ def get_volunteer_notifications(
 
     notifs = query.order_by(VolunteerNotification.created_at.desc()).all()
 
+    seen_keys = set()
     res = []
     for n in notifs:
+        key = (n.event_id, (n.title or '').strip(), (n.message or '').strip())
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
         res.append({
             "id": n.id,
             "event_id": n.event_id,
@@ -1029,4 +1034,6 @@ def get_volunteer_notifications(
             "event_title": n.event.title if n.event else None,
             "sender_name": n.sender.name if n.sender else "System"
         })
+        if len(res) >= 15:
+            break
     return res

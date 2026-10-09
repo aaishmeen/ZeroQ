@@ -49,7 +49,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   useEffect(() => {
     if (isAuthenticated && user) {
       getVolunteerNotificationsApi()
-        .then((data) => setNotifications(data))
+        .then((data) => {
+          const seen = new Set<string>();
+          const unique = data.filter((n: VolunteerNotification) => {
+            const key = `${n.event_id || 0}_${(n.title || '').trim()}_${(n.message || '').trim()}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setNotifications(unique);
+        })
         .catch(() => {});
     }
   }, [isAuthenticated, user]);
@@ -175,9 +184,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {isNotifOpen && (
                     <div className="absolute right-0 mt-2 w-80 bg-[#0B132B] border border-slate-700/80 rounded-2xl shadow-2xl py-3 px-4 z-50 space-y-3 backdrop-blur-xl">
                       <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
-                        <h3 className="text-xs font-bold uppercase text-[#06B6D4] tracking-wider">
-                          Notifications
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-bold uppercase text-[#06B6D4] tracking-wider">
+                            Notifications
+                          </h3>
+                          {notifications.length > 0 && (
+                            <button
+                              onClick={() => setNotifications([])}
+                              className="text-[10px] font-semibold text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
+                            >
+                              Clear All
+                            </button>
+                          )}
+                        </div>
                         <button
                           onClick={() => setIsNotifOpen(false)}
                           className="text-slate-400 hover:text-white"
