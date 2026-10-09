@@ -18,6 +18,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const sanitizeUserProfile = (profile: User): User => {
+  if (profile && (profile.role === 'admin' || profile.role === 'superadmin' || profile.role === 'organizer')) {
+    return {
+      ...profile,
+      is_approved_volunteer: false,
+    };
+  }
+  return profile;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('zeroq_token'));
@@ -32,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const profile = await getMeApi();
-      setUser(profile);
+      setUser(sanitizeUserProfile(profile));
     } catch (err) {
       console.error('Failed to fetch user profile:', err);
       localStorage.removeItem('zeroq_token');
@@ -51,7 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await loginApi(email, pass);
     localStorage.setItem('zeroq_token', data.access_token);
     setToken(data.access_token);
-    const profile = await getMeApi();
+    const rawProfile = await getMeApi();
+    const profile = sanitizeUserProfile(rawProfile);
     setUser(profile);
     return profile;
   };
