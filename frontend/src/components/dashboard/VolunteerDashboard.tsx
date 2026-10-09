@@ -8,6 +8,7 @@ import {
   getMyVolunteerApplicationsApi,
 } from '../../api/volunteers';
 import { checkInRegistrationApi } from '../../api/registrations';
+import { createDisputeApi, getDisputesApi } from '../../api/disputes';
 import { ChangePasswordModal } from '../common/ChangePasswordModal';
 import { BecomeVolunteerModal } from '../auth/BecomeVolunteerModal';
 import type {
@@ -16,6 +17,8 @@ import type {
   VolunteerApplication,
   VolunteerOpening,
   AssignmentItem,
+  Dispute,
+  DisputeCategory,
 } from '../../types';
 import {
   QrCode,
@@ -36,6 +39,8 @@ import {
   Compass,
   Upload,
   Trash2,
+  PlusCircle,
+  FileText,
 } from 'lucide-react';
 
 import { getFileUrl } from '../../api/events';
@@ -52,7 +57,7 @@ interface ScanHistoryItem {
 
 export const VolunteerDashboard: React.FC = () => {
   const { user, logout, uploadAvatar, deleteAvatar, updateBio } = useAuth();
-  const [activeTab, setActiveTab] = useState<'profile' | 'explore' | 'scan'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'explore' | 'scan' | 'disputes'>('profile');
 
   // Bio / Skills state
   const [bioInput, setBioInput] = useState<string>(user?.bio || '');
@@ -122,6 +127,17 @@ export const VolunteerDashboard: React.FC = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const qrRegionId = 'html5qr-code-full-region';
 
+  // Disputes state
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [isLoadingDisputes, setIsLoadingDisputes] = useState(false);
+  const [isCreateDisputeOpen, setIsCreateDisputeOpen] = useState(false);
+  const [disputeCategory, setDisputeCategory] = useState<DisputeCategory>('QR Issue');
+  const [disputeRegId, setDisputeRegId] = useState<string>('');
+  const [disputeDesc, setDisputeDesc] = useState<string>('');
+  const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
+  const [disputeSuccessMsg, setDisputeSuccessMsg] = useState<string | null>(null);
+  const [disputeErrorMsg, setDisputeErrorMsg] = useState<string | null>(null);
+
   // Modals
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isBecomeVolunteerOpen, setIsBecomeVolunteerOpen] = useState(false);
@@ -158,6 +174,49 @@ export const VolunteerDashboard: React.FC = () => {
     }
   };
 
+  const loadDisputes = async () => {
+    setIsLoadingDisputes(true);
+    try {
+      const list = await getDisputesApi();
+      setDisputes(list);
+    } catch (err) {
+      console.error('Failed to load disputes:', err);
+    } finally {
+      setIsLoadingDisputes(false);
+    }
+  };
+
+  const handleCreateDispute = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDisputeSuccessMsg(null);
+    setDisputeErrorMsg(null);
+
+    if (!disputeDesc.trim()) {
+      setDisputeErrorMsg('Description is required.');
+      return;
+    }
+
+    setIsSubmittingDispute(true);
+    try {
+      const regIdNum = disputeRegId.trim() ? parseInt(disputeRegId.trim(), 10) : undefined;
+      await createDisputeApi({
+        category: disputeCategory,
+        description: disputeDesc,
+        registration_id: isNaN(regIdNum as number) ? undefined : regIdNum,
+      });
+
+      setDisputeSuccessMsg('Gate dispute logged successfully. The event organizer has been notified.');
+      setDisputeDesc('');
+      setDisputeRegId('');
+      setIsCreateDisputeOpen(false);
+      loadDisputes();
+    } catch (err: any) {
+      setDisputeErrorMsg(err.response?.data?.detail || 'Failed to submit dispute.');
+    } finally {
+      setIsSubmittingDispute(false);
+    }
+  };
+
   const stopCamera = async () => {
     if (scannerRef.current && scannerRef.current.isScanning) {
       try {
@@ -177,6 +236,9 @@ export const VolunteerDashboard: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'explore') {
       loadOpportunities();
+      stopCamera();
+    } else if (activeTab === 'disputes') {
+      loadDisputes();
       stopCamera();
     } else if (activeTab === 'profile') {
       stopCamera();
@@ -517,6 +579,18 @@ export const VolunteerDashboard: React.FC = () => {
             >
               <Camera className="w-4 h-4 shrink-0" />
               <span>3. Scan QR Codes</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('disputes')}
+              className={`w-full px-3.5 py-2.5 rounded-xl text-left flex items-center space-x-3 text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'disputes'
+                  ? 'bg-gradient-to-r from-[#1D4ED8] to-[#2563EB] text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>4. Gate Disputes</span>
             </button>
 
             <div className="pt-2 border-t border-slate-100 mt-1">
@@ -1255,8 +1329,187 @@ export const VolunteerDashboard: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* SECTION 4: GATE DISPUTES */}
+          {activeTab === 'disputes' && (
+            <div className="space-y-5">
+              <PageHeader
+                eyebrow="VOLUNTEER PORTAL"
+                title="Gate Disputes"
+                description="Log operational verification discrepancies directly to the event organizer."
+                actions={
+                  <button
+                    onClick={() => setIsCreateDisputeOpen(true)}
+                    className="px-3.5 py-2 bg-[#FF5E36] hover:bg-[#e04f2b] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    Raise Gate Dispute
+                  </button>
+                }
+              />
+
+              {disputeSuccessMsg && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{disputeSuccessMsg}</span>
+                </div>
+              )}
+
+              {isLoadingDisputes ? (
+                <div className="p-6 text-center bg-white rounded-2xl border border-slate-200/80">
+                  <div className="w-6 h-6 border-2 border-[#1D4ED8] border-t-transparent rounded-full animate-spin mx-auto mb-1" />
+                  <span className="text-xs text-slate-400">Loading your reported gate disputes...</span>
+                </div>
+              ) : disputes.length === 0 ? (
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-500 space-y-2">
+                  <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs font-bold text-[#0F172A]">No gate disputes logged</p>
+                  <p className="text-[11px] max-w-sm mx-auto">
+                    If an attendee pass has issues, payment mismatches, or duplicate scan discrepancies at your gate, raise a dispute to notify the event organizer immediately.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {disputes.map((disp) => (
+                    <div
+                      key={disp.id}
+                      className="bg-white border border-slate-200/80 rounded-2xl p-4 space-y-2.5 shadow-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-blue-50 text-[#1D4ED8] border border-blue-200">
+                            {disp.category}
+                          </span>
+                          <span className="text-xs text-slate-500 font-medium">
+                            Station: {disp.position}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full ${
+                            disp.status === 'RESOLVED' || disp.status === 'CLOSED'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : disp.status === 'IN_REVIEW'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-red-50 text-red-700 border border-red-200'
+                          }`}
+                        >
+                          Status: {disp.status}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-[#0F172A] leading-relaxed">
+                        {disp.description}
+                      </p>
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+                        <span>Logged on: {new Date(disp.created_at).toLocaleString()}</span>
+                        {disp.resolved_at && (
+                          <span className="text-emerald-700 font-semibold">
+                            Resolved: {new Date(disp.resolved_at).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
+
+      {/* CREATE DISPUTE MODAL */}
+      {isCreateDisputeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-md space-y-3 relative shadow-xl">
+            <button
+              onClick={() => setIsCreateDisputeOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100"
+              aria-label="Close dispute dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div>
+              <h3 className="text-sm font-bold text-[#0F172A] flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-[#FF5E36]" />
+                Raise Gate Dispute
+              </h3>
+              <p className="text-xs text-slate-500">
+                Logged under: <strong className="text-[#1D4ED8]">{volunteerIdDisplay}</strong> ({currentAssignment?.position || 'Station'})
+              </p>
+            </div>
+
+            {disputeErrorMsg && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{disputeErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateDispute} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">Issue Category</label>
+                <select
+                  value={disputeCategory}
+                  onChange={(e) => setDisputeCategory(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+                >
+                  <option value="QR Issue">QR Code Not Scanning / Damaged</option>
+                  <option value="Payment Issue">Payment Unverified / Pending</option>
+                  <option value="Registration Issue">Registration Identity Mismatch</option>
+                  <option value="Attendee Information">Attendee Info Discrepancy</option>
+                  <option value="Ticket Issue">Ticket Appears Invalid / Fraudulent</option>
+                  <option value="Other">Other Operational Issue</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
+                  Registration Pass ID (Optional)
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 1042"
+                  value={disputeRegId}
+                  onChange={(e) => setDisputeRegId(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">Issue Description *</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Describe the discrepancy at your gate station..."
+                  value={disputeDesc}
+                  onChange={(e) => setDisputeDesc(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateDisputeOpen(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingDispute}
+                  className="px-5 py-2 bg-[#FF5E36] hover:bg-[#e04f2b] text-white rounded-xl font-bold text-xs transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  {isSubmittingDispute ? 'Submitting...' : 'Submit Dispute'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* CHANGE PASSWORD MODAL */}
       <ChangePasswordModal

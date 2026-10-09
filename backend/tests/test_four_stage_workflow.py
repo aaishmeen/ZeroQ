@@ -69,21 +69,19 @@ def test_workflow():
         db.refresh(admin)
 
         # Setup Event
-        event = db.query(Event).filter(Event.title == "Dandiya Nights 2026").first()
-        if not event:
-            event = Event(
-                title="Dandiya Nights 2026",
-                description="Grand Cultural Festival",
-                venue="University Grounds",
-                date="2026-10-15",
-                capacity=1000,
-                price=150,
-                owner_id=organizer.id,
-                status="APPROVED"
-            )
-            db.add(event)
-            db.commit()
-            db.refresh(event)
+        event = Event(
+            title=f"Workflow Fest {ts}",
+            description="Grand Cultural Festival",
+            venue="University Grounds",
+            date="2026-10-15",
+            capacity=1000,
+            price=150,
+            owner_id=organizer.id,
+            status="APPROVED"
+        )
+        db.add(event)
+        db.commit()
+        db.refresh(event)
         print(f"Using Event: '{event.title}' (ID: {event.id})")
 
         # ==========================================
