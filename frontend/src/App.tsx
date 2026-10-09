@@ -24,7 +24,7 @@ import { useToast } from './components/common/ToastContainer';
 const MainAppContent: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { showToast } = useToast();
-  const isStudentCapable = user ? user.role === 'student' || user.role === 'volunteer' || !!user.reg_no : false;
+  const isStudentCapable = user ? (user.role === 'student' || user.role === 'volunteer') && user.role !== 'organizer' && user.role !== 'admin' && user.role !== 'superadmin' : false;
 
   const [activeSection, setActiveSection] = useState<string>(
     isAuthenticated ? (isStudentCapable ? 'events' : 'dashboard') : 'home'

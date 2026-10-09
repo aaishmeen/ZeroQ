@@ -84,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="cursor-pointer flex items-center gap-2 group"
             onClick={() =>
               setActiveSection(
-                isAuthenticated ? (user && user.role !== 'student' ? 'dashboard' : 'events') : 'home'
+                isAuthenticated ? (user && (user.role === 'student' || user.role === 'volunteer') ? 'events' : 'dashboard') : 'home'
               )
             }
           >
@@ -104,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               Home
             </button>
 
-            {isAuthenticated && (!user || user.role === 'student' || user.role === 'volunteer' || user.is_approved_volunteer || !!user.reg_no) && (
+            {isAuthenticated && user && (user.role === 'student' || user.role === 'volunteer') && (
               <button
                 onClick={() => handleNavClick('events')}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
@@ -329,7 +329,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Home
           </button>
-          {isAuthenticated && (!user || user.role === 'student') && (
+          {isAuthenticated && user && (user.role === 'student' || user.role === 'volunteer') && (
             <button
               onClick={() => handleNavClick('events')}
               className={`block w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
