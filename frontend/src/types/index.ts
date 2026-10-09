@@ -211,6 +211,8 @@ export interface VolunteerNotification {
   id: number;
   event_id: number;
   sender_id: number;
+  recipient_id?: number | null;
+  target_role?: string | null;
   title: string;
   message: string;
   created_at: string;

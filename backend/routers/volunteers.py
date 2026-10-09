@@ -352,6 +352,8 @@ def apply_for_volunteer(
     notif = VolunteerNotification(
         event_id=req.event_id,
         sender_id=current_user.id,
+        recipient_id=event.owner_id,
+        target_role="organizer",
         title="New Volunteer Application",
         message=f"{current_user.name} applied for {role_desc} at '{event.title}'."
     )
@@ -450,6 +452,8 @@ def approve_volunteer_application(
     notif = VolunteerNotification(
         event_id=app_obj.event_id,
         sender_id=current_user.id,
+        recipient_id=app_obj.user_id,
+        target_role="student",
         title="Volunteer Application Approved",
         message=f"Your application for '{app_obj.event.title}' has been approved."
     )
@@ -487,6 +491,8 @@ def reject_volunteer_application(
     notif = VolunteerNotification(
         event_id=app_obj.event_id,
         sender_id=current_user.id,
+        recipient_id=app_obj.user_id,
+        target_role="student",
         title="Volunteer Application Not Approved",
         message=f"Your application for '{app_obj.event.title}' was not approved."
     )
@@ -609,6 +615,8 @@ def create_volunteer_assignment(
     notif = VolunteerNotification(
         event_id=req.event_id,
         sender_id=current_user.id,
+        recipient_id=req.volunteer_id,
+        target_role="volunteer",
         title="Volunteer Assignment Updated",
         message=f"You've been assigned to {req.position} for '{event.title}'."
     )
@@ -901,6 +909,8 @@ def send_volunteer_notification(
     notif = VolunteerNotification(
         event_id=req.event_id,
         sender_id=current_user.id,
+        recipient_id=req.recipient_id,
+        target_role=req.target_role or "volunteer",
         title=req.title,
         message=req.message,
         created_at=datetime.now(UTC)
@@ -913,6 +923,8 @@ def send_volunteer_notification(
         "id": notif.id,
         "event_id": notif.event_id,
         "sender_id": notif.sender_id,
+        "recipient_id": notif.recipient_id,
+        "target_role": notif.target_role,
         "title": notif.title,
         "message": notif.message,
         "created_at": notif.created_at,
@@ -927,24 +939,66 @@ def get_volunteer_notifications(
     db: Session = Depends(get_db)
 ):
     """
-    Returns broadcast notifications relevant for the user.
+    Returns notifications strictly relevant and authorized for the current user.
+    Enforces role-based and recipient-based access control on the backend.
     """
+    from sqlalchemy import or_, and_
+
+    query = db.query(VolunteerNotification)
+
     if current_user.role in ["admin", "superadmin"]:
-        notifs = db.query(VolunteerNotification).order_by(VolunteerNotification.created_at.desc()).all()
+        query = query.filter(
+            or_(
+                VolunteerNotification.recipient_id == current_user.id,
+                VolunteerNotification.target_role.in_(["admin", "superadmin", "all"]),
+                and_(
+                    VolunteerNotification.recipient_id == None,
+                    or_(
+                        VolunteerNotification.target_role == None,
+                        VolunteerNotification.target_role.in_(["admin", "superadmin", "organizer"])
+                    )
+                )
+            )
+        )
     elif current_user.role == "organizer":
         owned_events = db.query(Event.id).filter(Event.owner_id == current_user.id).all()
         owned_event_ids = [e[0] for e in owned_events]
-        notifs = db.query(VolunteerNotification).filter(
-            VolunteerNotification.event_id.in_(owned_event_ids)
-        ).order_by(VolunteerNotification.created_at.desc()).all()
-    else:
-        apps = db.query(VolunteerApplication.event_id).filter(VolunteerApplication.user_id == current_user.id).all()
-        assignments = db.query(VolunteerAssignment.event_id).filter(VolunteerAssignment.volunteer_id == current_user.id).all()
-        event_ids = list(set([a[0] for a in apps] + [a[0] for a in assignments]))
 
-        notifs = db.query(VolunteerNotification).filter(
-            VolunteerNotification.event_id.in_(event_ids)
-        ).order_by(VolunteerNotification.created_at.desc()).all()
+        query = query.filter(
+            VolunteerNotification.event_id.in_(owned_event_ids),
+            or_(
+                VolunteerNotification.recipient_id == current_user.id,
+                and_(
+                    or_(VolunteerNotification.recipient_id == None, VolunteerNotification.recipient_id == current_user.id),
+                    or_(VolunteerNotification.target_role == None, VolunteerNotification.target_role.in_(["organizer", "all"]))
+                )
+            )
+        )
+    else:
+        # Student / Volunteer role
+        reg_event_ids = [r[0] for r in db.query(Registration.event_id).filter(Registration.user_id == current_user.id).all()]
+        app_event_ids = [a[0] for a in db.query(VolunteerApplication.event_id).filter(VolunteerApplication.user_id == current_user.id).all()]
+        ass_event_ids = [a[0] for a in db.query(VolunteerAssignment.event_id).filter(VolunteerAssignment.volunteer_id == current_user.id).all()]
+        user_event_ids = list(set(reg_event_ids + app_event_ids + ass_event_ids))
+
+        # Strict Student Filter:
+        # 1. Must be directly addressed to this student (recipient_id == current_user.id)
+        # 2. OR broadcast to students/volunteers/all (recipient_id is None AND target_role in ["student", "volunteer", "all"])
+        # 3. MUST NOT be targeted at "organizer", "admin", "superadmin"
+        # 4. MUST NOT be a notification sent by the student themselves for organizer review
+        query = query.filter(
+            VolunteerNotification.event_id.in_(user_event_ids),
+            VolunteerNotification.sender_id != current_user.id,
+            or_(
+                VolunteerNotification.recipient_id == current_user.id,
+                and_(
+                    VolunteerNotification.recipient_id == None,
+                    VolunteerNotification.target_role.in_(["student", "volunteer", "all"])
+                )
+            )
+        )
+
+    notifs = query.order_by(VolunteerNotification.created_at.desc()).all()
 
     res = []
     for n in notifs:
@@ -952,10 +1006,12 @@ def get_volunteer_notifications(
             "id": n.id,
             "event_id": n.event_id,
             "sender_id": n.sender_id,
+            "recipient_id": n.recipient_id,
+            "target_role": n.target_role,
             "title": n.title,
             "message": n.message,
             "created_at": n.created_at,
             "event_title": n.event.title if n.event else None,
-            "sender_name": n.sender.name if n.sender else "Organizer"
+            "sender_name": n.sender.name if n.sender else "System"
         })
     return res

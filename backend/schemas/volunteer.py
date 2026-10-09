@@ -171,12 +171,16 @@ class VolunteerNotificationCreate(BaseModel):
     event_id: int
     title: str = Field(min_length=2, max_length=150)
     message: str = Field(min_length=2, max_length=1000)
+    recipient_id: int | None = None
+    target_role: str | None = None
 
 
 class VolunteerNotificationResponse(BaseModel):
     id: int
     event_id: int
     sender_id: int
+    recipient_id: int | None = None
+    target_role: str | None = None
     title: str
     message: str
     created_at: datetime

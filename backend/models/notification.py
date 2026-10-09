@@ -10,9 +10,12 @@ class VolunteerNotification(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    recipient_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    target_role = Column(String, nullable=True)
     title = Column(String, nullable=False)
     message = Column(String, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     event = relationship("Event")
     sender = relationship("User", foreign_keys=[sender_id])
+    recipient = relationship("User", foreign_keys=[recipient_id])
