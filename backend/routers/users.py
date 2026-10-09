@@ -24,9 +24,10 @@ router = APIRouter(
 )
 def get_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(require_role("admin", "superadmin"))
 ):
-    return db.query(User).all()
+    users = db.query(User).all()
+    return [_build_user_response(u, db) for u in users]
 
 
 @router.post(

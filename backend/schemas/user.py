@@ -25,9 +25,9 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     name: str
-    email: EmailStr
+    email: str
     reg_no: str | None = None
-    phone: str
+    phone: str | None = None
     role: str
     status: str | None = "approved"
     volunteer_id: str | None = None

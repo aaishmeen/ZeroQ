@@ -79,6 +79,7 @@ export const AdminDashboard: React.FC = () => {
   const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
   const [allRegistrations, setAllRegistrations] = useState<Registration[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [usersError, setUsersError] = useState<string | null>(null);
   const [volunteerOpenings, setVolunteerOpenings] = useState<VolunteerOpening[]>([]);
   const [volunteerApplications, setVolunteerApplications] = useState<VolunteerApplication[]>([]);
   const [approvedVolunteers, setApprovedVolunteers] = useState<ApprovedVolunteerWithAssignment[]>([]);
@@ -238,14 +239,14 @@ export const AdminDashboard: React.FC = () => {
 
   const loadData = async () => {
     setIsLoading(true);
+    setUsersError(null);
     try {
-      const [eventsData, pendingEvData, pendingPayData, regData, usersData, openingsData, appsData, approvedData] =
+      const [eventsData, pendingEvData, pendingPayData, regData, openingsData, appsData, approvedData] =
         await Promise.all([
           getEventsApi().catch(() => []),
           getPendingEventsApi().catch(() => []),
           getPendingPaymentsApi().catch(() => []),
           getRegistrationsApi().catch(() => []),
-          getUsersApi().catch(() => []),
           getVolunteerOpeningsApi().catch(() => []),
           getVolunteerRequestsApi().catch(() => []),
           getApprovedVolunteersApi().catch(() => []),
@@ -254,10 +255,17 @@ export const AdminDashboard: React.FC = () => {
       setPendingEvents(pendingEvData);
       setPendingPayments(pendingPayData);
       setAllRegistrations(regData);
-      setAllUsers(usersData);
       setVolunteerOpenings(openingsData);
       setVolunteerApplications(appsData);
       setApprovedVolunteers(approvedData);
+
+      try {
+        const usersData = await getUsersApi();
+        setAllUsers(usersData);
+      } catch (err: any) {
+        console.error('Error fetching users:', err);
+        setUsersError(err.response?.data?.detail || 'Failed to load user directory.');
+      }
     } catch (err) {
       console.error('Error loading admin dashboard data:', err);
     } finally {
@@ -424,13 +432,29 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const filteredUsers = allUsers.filter((u) => {
-    const matchesRole = selectedRoleFilter === 'all' || u.role === selectedRoleFilter;
-    const query = userSearchQuery.toLowerCase();
+    const userRoleLower = (u.role || '').toLowerCase();
+    const filterLower = selectedRoleFilter.toLowerCase();
+
+    let matchesRole = false;
+    if (filterLower === 'all') {
+      matchesRole = true;
+    } else if (filterLower === 'volunteer') {
+      matchesRole = userRoleLower === 'volunteer' || Boolean(u.is_approved_volunteer);
+    } else if (filterLower === 'admin') {
+      matchesRole = userRoleLower === 'admin' || userRoleLower === 'superadmin';
+    } else {
+      matchesRole = userRoleLower === filterLower;
+    }
+
+    const query = userSearchQuery.trim().toLowerCase();
     const matchesSearch =
       !query ||
-      u.name.toLowerCase().includes(query) ||
-      u.email.toLowerCase().includes(query) ||
-      (u.reg_no ? u.reg_no.toLowerCase().includes(query) : false);
+      (u.name || '').toLowerCase().includes(query) ||
+      (u.email || '').toLowerCase().includes(query) ||
+      (u.reg_no ? u.reg_no.toLowerCase().includes(query) : false) ||
+      (u.volunteer_id ? u.volunteer_id.toLowerCase().includes(query) : false) ||
+      (u.phone ? u.phone.toLowerCase().includes(query) : false);
+
     return matchesRole && matchesSearch;
   });
 
@@ -958,7 +982,17 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {filteredUsers.length === 0 ? (
+            {usersError ? (
+              <div className="py-8 text-center space-y-3">
+                <p className="text-xs text-red-600 font-semibold">{usersError}</p>
+                <button
+                  onClick={loadData}
+                  className="px-3 py-1.5 bg-[#1D4ED8] text-white text-xs font-semibold rounded hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3 h-3" /> Retry Loading Users
+                </button>
+              </div>
+            ) : filteredUsers.length === 0 ? (
               <p className="text-xs text-[#6B8B74] py-6 text-center">No users match criteria.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -980,7 +1014,7 @@ export const AdminDashboard: React.FC = () => {
                         <td className="p-2.5 font-semibold">{u.name}</td>
                         <td className="p-2.5 text-[#3D5A45]">{u.email}</td>
                         <td className="p-2.5 font-mono text-[11px]">{u.volunteer_id || u.reg_no || 'N/A'}</td>
-                        <td className="p-2.5 text-[#3D5A45]">{u.phone}</td>
+                        <td className="p-2.5 text-[#3D5A45]">{u.phone || 'N/A'}</td>
                         <td className="p-2.5">
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#E5F5E0] text-[#1D4ED8]">
                             {u.role}
