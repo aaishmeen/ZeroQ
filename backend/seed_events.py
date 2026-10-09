@@ -12,6 +12,7 @@ from auth.hashing import hash_password
 from constants.event_status import EventStatus
 from models.registration import Registration
 from models.payment import Payment
+from models.volunteer import VolunteerOpening
 
 def seed_database():
     db = SessionLocal()
@@ -165,6 +166,47 @@ def seed_database():
 
         db.commit()
         print(f"Successfully seeded {added_count} Indian college events into the database!")
+
+        # Seed Volunteer Openings for events accepting volunteers
+        hackathon = db.query(Event).filter(Event.title.like("%HackInit 2026%")).first()
+        if hackathon:
+            existing_op = db.query(VolunteerOpening).filter(VolunteerOpening.event_id == hackathon.id).first()
+            if not existing_op:
+                db.add_all([
+                    VolunteerOpening(
+                        event_id=hackathon.id,
+                        role="Gate & Access Volunteer",
+                        volunteers_needed=5,
+                        description="Assist with attendee check-in and QR pass scanning at APJ Abdul Kalam Auditorium.",
+                        status="open",
+                        created_by=organizer.id
+                    ),
+                    VolunteerOpening(
+                        event_id=hackathon.id,
+                        role="Hackathon Desk Coordinator",
+                        volunteers_needed=3,
+                        description="Help mentor teams, distribute food tokens, and coordinate lab access.",
+                        status="open",
+                        created_by=organizer.id
+                    )
+                ])
+                db.commit()
+                print(f"Seeded volunteer openings for {hackathon.title}")
+
+        techsparks = db.query(Event).filter(Event.title.like("%TechSparks 2026%")).first()
+        if techsparks:
+            existing_op = db.query(VolunteerOpening).filter(VolunteerOpening.event_id == techsparks.id).first()
+            if not existing_op:
+                db.add(VolunteerOpening(
+                    event_id=techsparks.id,
+                    role="Stage & Logistics Volunteer",
+                    volunteers_needed=4,
+                    description="Coordinate main OAT stage performances and audio equipment.",
+                    status="open",
+                    created_by=organizer.id
+                ))
+                db.commit()
+                print(f"Seeded volunteer openings for {techsparks.title}")
 
     except Exception as e:
         print(f"Error seeding database: {e}")

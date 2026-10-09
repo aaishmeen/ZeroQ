@@ -18,6 +18,7 @@ from constants.registration_status import RegistrationStatus
 
 from dependencies.auth import require_role , get_current_user
 from dependencies.event import get_owned_event
+from services.volunteer_service import is_event_accepting_volunteers
 
 
 router = APIRouter(
@@ -30,13 +31,19 @@ router = APIRouter(
 def get_events(
     db: Session = Depends(get_db)
 ):
-    return db.query(Event).filter(
+    events = db.query(Event).filter(
         Event.status.in_([
             "APPROVED", "UPCOMING", "ACTIVE", "COMPLETED",
             "approved", "upcoming", "active", "completed",
             "Approved", "Upcoming", "Active", "Completed"
         ])
     ).all()
+    res = []
+    for e in events:
+        resp = EventResponse.model_validate(e)
+        resp.accepting_volunteers = is_event_accepting_volunteers(e, db)
+        res.append(resp)
+    return res
 
 @router.get("/pending", response_model=list[EventResponse])
 def get_pending_events(

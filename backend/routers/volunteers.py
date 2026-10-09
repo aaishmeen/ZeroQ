@@ -28,6 +28,7 @@ from schemas.volunteer import (
     VolunteerNotificationCreate,
     VolunteerNotificationResponse,
 )
+from services.volunteer_service import is_event_accepting_volunteers
 from auth.hashing import hash_password
 from dependencies.auth import get_current_user, get_optional_current_user, require_role
 from services.volunteer_service import ensure_volunteer_id
@@ -309,6 +310,12 @@ def apply_for_volunteer(
     event = db.query(Event).filter(Event.id == req.event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found.")
+
+    if not is_event_accepting_volunteers(event, db):
+        raise HTTPException(
+            status_code=400,
+            detail="Volunteer applications are not currently open for this event."
+        )
 
     opening = None
     if req.opening_id:

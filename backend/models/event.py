@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Date, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from database.database import Base
@@ -19,6 +19,7 @@ class Event(Base):
     capacity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
     volunteers_limit = Column(Integer, nullable=False, default=10)
+    accepting_volunteers = Column(Boolean, nullable=False, default=True)
     
     status = Column(
         String,

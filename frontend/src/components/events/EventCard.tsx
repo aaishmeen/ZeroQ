@@ -33,7 +33,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   };
 
   const category = getCategory(event.title);
-  const isAcceptingVolunteers = event.accepting_volunteers !== false && (event.volunteers_limit === undefined || event.volunteers_limit > 0);
+  const isAcceptingVolunteers = Boolean(event.accepting_volunteers);
 
   return (
     <div 

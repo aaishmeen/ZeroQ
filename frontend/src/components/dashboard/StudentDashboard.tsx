@@ -631,9 +631,6 @@ export const StudentDashboard: React.FC = () => {
                                     <div className="space-y-1">
                                       <div className="flex items-center justify-between">
                                         <h4 className="text-xs font-bold text-[#0F172A]">{op.role}</h4>
-                                        <span className="text-[10px] font-bold text-[#FF5E36] bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
-                                          {op.remaining_count} spots left
-                                        </span>
                                       </div>
                                       {op.description && (
                                         <p className="text-[11px] text-slate-600 line-clamp-2">{op.description}</p>

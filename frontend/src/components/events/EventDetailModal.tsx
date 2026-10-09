@@ -31,7 +31,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     return `₹${price.toLocaleString('en-IN')}`;
   };
 
-  const isAcceptingVolunteers = event.accepting_volunteers !== false && (event.volunteers_limit === undefined || event.volunteers_limit > 0);
+  const isAcceptingVolunteers = Boolean(event.accepting_volunteers);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">

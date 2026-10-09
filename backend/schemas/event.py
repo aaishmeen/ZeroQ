@@ -9,6 +9,7 @@ class EventsCreate(BaseModel):
     capacity:int = Field(gt=0)
     price:float = Field(ge=0)
     volunteers_limit: int = Field(default=10, ge=1)
+    accepting_volunteers: bool = Field(default=True)
 
 class EventResponse(BaseModel):
     id: int
@@ -19,6 +20,7 @@ class EventResponse(BaseModel):
     capacity: int
     price: float
     volunteers_limit: int = 10
+    accepting_volunteers: bool = True
     owner_id: int
     status: str
     rejection_reason: str | None
