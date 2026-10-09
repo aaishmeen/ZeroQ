@@ -1708,13 +1708,18 @@ export const OrganizerDashboard: React.FC = () => {
 
               {/* 4-Stat Metrics Bar */}
               {(() => {
-                const filteredOpenings = volunteerOpenings.filter((o) =>
+                const myOwnedEventIds = new Set(myEvents.map((e) => e.id));
+                const myVolunteerOpenings = volunteerOpenings.filter((o) => myOwnedEventIds.has(o.event_id));
+                const myVolunteerApplications = volunteerApplications.filter((app) => myOwnedEventIds.has(app.event_id));
+                const myApprovedVolunteers = approvedVolunteers.filter((appr) => myOwnedEventIds.has(appr.event_id));
+
+                const filteredOpenings = myVolunteerOpenings.filter((o) =>
                   selectedEventForVolunteers === 'all' ? true : o.event_id === selectedEventForVolunteers
                 );
-                const filteredApps = volunteerApplications.filter((app) =>
+                const filteredApps = myVolunteerApplications.filter((app) =>
                   selectedEventForVolunteers === 'all' ? true : app.event_id === selectedEventForVolunteers
                 );
-                const filteredApproved = approvedVolunteers.filter((appr) =>
+                const filteredApproved = myApprovedVolunteers.filter((appr) =>
                   selectedEventForVolunteers === 'all' ? true : appr.event_id === selectedEventForVolunteers
                 );
                 const pendingCount = filteredApps.filter((a) => a.status === 'pending').length;
@@ -1770,9 +1775,10 @@ export const OrganizerDashboard: React.FC = () => {
               </div>
 
               {(() => {
-                const filteredOpenings = volunteerOpenings.filter((o) =>
-                  selectedEventForVolunteers === 'all' ? true : o.event_id === selectedEventForVolunteers
-                );
+                const myOwnedEventIds = new Set(myEvents.map((e) => e.id));
+                const filteredOpenings = volunteerOpenings
+                  .filter((o) => myOwnedEventIds.has(o.event_id))
+                  .filter((o) => (selectedEventForVolunteers === 'all' ? true : o.event_id === selectedEventForVolunteers));
 
                 if (filteredOpenings.length === 0) {
                   return (
@@ -1918,11 +1924,14 @@ export const OrganizerDashboard: React.FC = () => {
               </div>
 
               {(() => {
-                const filteredApps = volunteerApplications.filter((app) => {
-                  const matchesEvent = selectedEventForVolunteers === 'all' || app.event_id === selectedEventForVolunteers;
-                  const matchesOpening = selectedOpeningFilter === 'all' || app.opening_id === selectedOpeningFilter;
-                  return matchesEvent && matchesOpening;
-                });
+                const myOwnedEventIds = new Set(myEvents.map((e) => e.id));
+                const filteredApps = volunteerApplications
+                  .filter((app) => myOwnedEventIds.has(app.event_id))
+                  .filter((app) => {
+                    const matchesEvent = selectedEventForVolunteers === 'all' || app.event_id === selectedEventForVolunteers;
+                    const matchesOpening = selectedOpeningFilter === 'all' || app.opening_id === selectedOpeningFilter;
+                    return matchesEvent && matchesOpening;
+                  });
 
                 if (filteredApps.length === 0) {
                   return (
@@ -2033,9 +2042,10 @@ export const OrganizerDashboard: React.FC = () => {
               </div>
 
               {(() => {
-                const filteredApproved = approvedVolunteers.filter((v) =>
-                  selectedEventForVolunteers === 'all' ? true : v.event_id === selectedEventForVolunteers
-                );
+                const myOwnedEventIds = new Set(myEvents.map((e) => e.id));
+                const filteredApproved = approvedVolunteers
+                  .filter((v) => myOwnedEventIds.has(v.event_id))
+                  .filter((v) => (selectedEventForVolunteers === 'all' ? true : v.event_id === selectedEventForVolunteers));
 
                 if (filteredApproved.length === 0) {
                   return (
