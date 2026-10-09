@@ -1019,16 +1019,26 @@ export const VolunteerDashboard: React.FC = () => {
                           {ev.description && <p className="text-xs text-slate-600">{ev.description}</p>}
 
                           {/* Specific Openings List */}
-                          {hasOpenings ? (
-                            <div className="space-y-2 pt-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                                Volunteer Roles ({ev.openings!.length}):
-                              </span>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                                {ev.openings!.map((op) => {
-                                  const userAppForOp = myApplications.find((a) => a.opening_id === op.id);
-                                  const alreadyApplied = !!userAppForOp;
-                                  const isFull = op.remaining_count === 0;
+                          {hasOpenings ? (() => {
+                            const uniqueOpenings = (ev.openings || []).filter(
+                              (op, idx, self) =>
+                                idx ===
+                                self.findIndex(
+                                  (o) =>
+                                    (o.role || '').trim().toLowerCase() === (op.role || '').trim().toLowerCase() &&
+                                    (o.gate_area || '').trim().toLowerCase() === (op.gate_area || '').trim().toLowerCase()
+                                )
+                            );
+                            return (
+                              <div className="space-y-2 pt-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                  Volunteer Roles ({uniqueOpenings.length}):
+                                </span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                  {uniqueOpenings.map((op) => {
+                                    const userAppForOp = myApplications.find((a) => a.opening_id === op.id);
+                                    const alreadyApplied = !!userAppForOp;
+                                    const isFull = op.remaining_count === 0;
 
                                   return (
                                     <div
@@ -1076,7 +1086,8 @@ export const VolunteerDashboard: React.FC = () => {
                                 })}
                               </div>
                             </div>
-                          ) : (
+                          );
+                        })() : (
                             <div className="pt-2 flex justify-end">
                               <button
                                 onClick={() => {

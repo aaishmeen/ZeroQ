@@ -85,20 +85,45 @@ def create_volunteer_opening(
     if current_user.role not in ["admin", "superadmin"] and event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to create openings for this event.")
 
-    opening = VolunteerOpening(
-        event_id=req.event_id,
-        role=req.role.strip(),
-        volunteers_needed=req.volunteers_needed,
-        description=req.description.strip() if req.description else None,
-        deadline=req.deadline.strip() if req.deadline else None,
-        gate_area=req.gate_area.strip() if req.gate_area else None,
-        status="open",
-        created_by=current_user.id,
-        created_at=datetime.now(UTC)
+    role_clean = req.role.strip()
+    gate_clean = req.gate_area.strip() if req.gate_area else None
+
+    # Check if an opening for the same event, role, and gate_area already exists
+    from sqlalchemy import func
+    query = db.query(VolunteerOpening).filter(
+        VolunteerOpening.event_id == req.event_id,
+        func.lower(func.trim(VolunteerOpening.role)) == role_clean.lower()
     )
-    db.add(opening)
-    db.commit()
-    db.refresh(opening)
+    if gate_clean:
+        query = query.filter(func.lower(func.trim(VolunteerOpening.gate_area)) == gate_clean.lower())
+    else:
+        query = query.filter((VolunteerOpening.gate_area == None) | (func.trim(VolunteerOpening.gate_area) == ""))
+
+    opening = query.first()
+    if opening:
+        opening.volunteers_needed = req.volunteers_needed
+        if req.description:
+            opening.description = req.description.strip()
+        if req.deadline:
+            opening.deadline = req.deadline.strip()
+        opening.status = "open"
+        db.commit()
+        db.refresh(opening)
+    else:
+        opening = VolunteerOpening(
+            event_id=req.event_id,
+            role=role_clean,
+            volunteers_needed=req.volunteers_needed,
+            description=req.description.strip() if req.description else None,
+            deadline=req.deadline.strip() if req.deadline else None,
+            gate_area=gate_clean,
+            status="open",
+            created_by=current_user.id,
+            created_at=datetime.now(UTC)
+        )
+        db.add(opening)
+        db.commit()
+        db.refresh(opening)
 
     return _format_opening_response(opening, db)
 
@@ -230,7 +255,13 @@ def get_available_volunteer_events(
             VolunteerOpening.event_id == e.id,
             VolunteerOpening.status == "open"
         ).all()
-        openings_res = [_format_opening_response(o, db) for o in openings]
+        seen_keys = set()
+        openings_res = []
+        for o in openings:
+            key = ((o.role or "").strip().lower(), (o.gate_area or "").strip().lower())
+            if key not in seen_keys:
+                seen_keys.add(key)
+                openings_res.append(_format_opening_response(o, db))
 
         # Approved volunteers count for the event
         approved_count = db.query(VolunteerApplication).filter(

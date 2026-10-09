@@ -90,21 +90,26 @@ def test_workflow():
         # STAGE 1: CREATE VOLUNTEER OPENING
         # ==========================================
         print("\n--- STAGE 1: CREATE VOLUNTEER OPENING ---")
-        opening = VolunteerOpening(
-            event_id=event.id,
-            role="Gate Volunteer",
-            volunteers_needed=6,
-            description="Manage entry scanning and crowd flow at gates.",
-            deadline="2026-10-10",
-            gate_area=None, # Gate/Area decoupled!
-            status="open",
-            created_by=organizer.id,
-            created_at=datetime.now(UTC)
-        )
-        db.add(opening)
-        db.commit()
-        db.refresh(opening)
-        print(f"[OK] Opening created: ID={opening.id}, Role='{opening.role}', Needed={opening.volunteers_needed}, Gate/Area={opening.gate_area} (Decoupled)")
+        opening = db.query(VolunteerOpening).filter(
+            VolunteerOpening.event_id == event.id,
+            VolunteerOpening.role == "Gate Volunteer"
+        ).first()
+        if not opening:
+            opening = VolunteerOpening(
+                event_id=event.id,
+                role="Gate Volunteer",
+                volunteers_needed=6,
+                description="Manage entry scanning and crowd flow at gates.",
+                deadline="2026-10-10",
+                gate_area=None, # Gate/Area decoupled!
+                status="open",
+                created_by=organizer.id,
+                created_at=datetime.now(UTC)
+            )
+            db.add(opening)
+            db.commit()
+            db.refresh(opening)
+        print(f"[OK] Opening created/reused: ID={opening.id}, Role='{opening.role}', Needed={opening.volunteers_needed}, Gate/Area={opening.gate_area} (Decoupled)")
 
         # Verify initial capacity metrics
         apps = db.query(VolunteerApplication).filter(VolunteerApplication.opening_id == opening.id).all()
@@ -270,6 +275,15 @@ def test_workflow():
         print("==========================================")
 
     finally:
+        try:
+            if 'organizer' in locals() and 'student1' in locals() and 'student2' in locals() and 'admin' in locals():
+                db.query(VolunteerAssignment).filter(VolunteerAssignment.assigned_by == organizer.id).delete(synchronize_session=False)
+                db.query(VolunteerNotification).filter(VolunteerNotification.sender_id.in_([organizer.id, student1.id, student2.id])).delete(synchronize_session=False)
+                db.query(VolunteerApplication).filter(VolunteerApplication.user_id.in_([student1.id, student2.id])).delete(synchronize_session=False)
+                db.query(User).filter(User.id.in_([organizer.id, student1.id, student2.id, admin.id])).delete(synchronize_session=False)
+                db.commit()
+        except Exception:
+            db.rollback()
         db.close()
 
 if __name__ == "__main__":
