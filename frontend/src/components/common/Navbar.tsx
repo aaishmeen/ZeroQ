@@ -64,10 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const hasVolunteerAccess =
-    user?.role === 'admin' ||
-    user?.role === 'organizer' ||
     user?.role === 'volunteer' ||
-    user?.role === 'superadmin' ||
     user?.is_approved_volunteer === true;
 
   return (

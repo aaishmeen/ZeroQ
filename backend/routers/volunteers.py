@@ -271,8 +271,8 @@ def get_available_volunteer_events(
         ).count()
 
         vol_limit = getattr(e, "volunteers_limit", 10) or 10
-        # Only include events taking volunteers (limit not exceeded or open openings exist)
-        if approved_count < vol_limit or len(openings) > 0:
+        # Only include events with active open openings and remaining volunteer capacity
+        if len(openings) > 0 and approved_count < vol_limit:
             res.append({
                 "id": e.id,
                 "title": e.title,
@@ -322,6 +322,8 @@ def apply_for_volunteer(
         opening = db.query(VolunteerOpening).filter(VolunteerOpening.id == req.opening_id).first()
         if not opening:
             raise HTTPException(status_code=404, detail="Volunteer opening not found.")
+        if opening.event_id != req.event_id:
+            raise HTTPException(status_code=400, detail="Specified volunteer opening does not belong to this event.")
         if opening.status != "open":
             raise HTTPException(status_code=400, detail="Applications for this opening are currently closed.")
 
