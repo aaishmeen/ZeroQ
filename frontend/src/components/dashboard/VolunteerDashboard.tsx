@@ -37,6 +37,7 @@ import {
   Calendar,
   Clock,
   User as UserIcon,
+  ShieldCheck,
 } from 'lucide-react';
 
 import { getFileUrl } from '../../api/events';
