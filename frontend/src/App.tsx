@@ -113,8 +113,18 @@ const MainAppContent: React.FC = () => {
       <main className="flex-1 pt-[var(--navbar-height)]">
         {(() => {
           if (isAuthenticated && user) {
-            // Administrative & Organizer Accounts: Always route to their Dashboard except for explicit info pages
+            // Administrative & Organizer Accounts
             if (user.role === 'admin' || user.role === 'superadmin' || user.role === 'organizer') {
+              if (activeSection === 'home') {
+                return (
+                  <HeroSection
+                    onGetStarted={() => setActiveSection('dashboard')}
+                    onExploreEvents={() => setActiveSection('dashboard')}
+                    onHowItWorks={() => setActiveSection('how-it-works')}
+                    isAuthenticated={isAuthenticated}
+                  />
+                );
+              }
               if (activeSection === 'how-it-works') {
                 return <HowItWorksPage onGetStarted={() => setIsRegisterOpen(true)} />;
               }
