@@ -103,11 +103,18 @@ export const uploadEventQrApi = async (eventId: number, file: File): Promise<{ m
   return response.data;
 };
 
-export const getFileUrl = (filePath: string): string => {
+export const getFileUrl = (filePath?: string | null): string => {
   if (!filePath) return '';
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  if (
+    normalizedPath.startsWith('http://') ||
+    normalizedPath.startsWith('https://') ||
+    normalizedPath.startsWith('data:')
+  ) {
+    return normalizedPath;
+  }
   const rawBase = apiClient.defaults.baseURL || 'http://localhost:8000';
   const baseURL = rawBase.replace(/\/+$/, '');
-  const normalizedPath = filePath.replace(/\\/g, '/');
   if (normalizedPath.startsWith('/')) {
     return `${baseURL}${normalizedPath}`;
   }

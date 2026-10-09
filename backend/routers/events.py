@@ -217,23 +217,50 @@ def upload_event_banner(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin", "organizer"))
 ):
+    from services.cloudinary_service import (
+        validate_and_read_image,
+        upload_image_to_cloudinary,
+        delete_cloudinary_image
+    )
+
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     if current_user.role != "admin" and event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to edit this event")
 
-    os.makedirs(f"uploads/events/{event_id}", exist_ok=True)
-    file_extension = file.filename.split(".")[-1] if "." in file.filename else "png"
-    filename = f"banner_{uuid.uuid4().hex}.{file_extension}"
-    file_path = f"uploads/events/{event_id}/{filename}"
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    event.banner_url = f"/{file_path}"
-    db.commit()
-    
+    file_bytes = validate_and_read_image(file, max_size_mb=5.0)
+    upload_res = upload_image_to_cloudinary(file_bytes, folder="zeroq/event-banners")
+
+    new_secure_url = upload_res["secure_url"]
+    new_public_id = upload_res["public_id"]
+    old_public_id = event.banner_public_id
+    old_banner_url = event.banner_url
+
+    event.banner_url = new_secure_url
+    event.banner_public_id = new_public_id
+
+    try:
+        db.commit()
+        db.refresh(event)
+    except Exception:
+        db.rollback()
+        delete_cloudinary_image(new_public_id)
+        raise HTTPException(
+            status_code=500,
+            detail="Database failed to update banner. Cloudinary upload reverted."
+        )
+
+    if old_public_id:
+        delete_cloudinary_image(old_public_id)
+    elif old_banner_url and old_banner_url.startswith("/uploads/"):
+        relative_path = old_banner_url.lstrip("/")
+        if os.path.exists(relative_path):
+            try:
+                os.remove(relative_path)
+            except Exception:
+                pass
+
     return {"message": "Banner uploaded successfully", "banner_url": event.banner_url}
 
 @router.post("/{event_id}/upload-qr")

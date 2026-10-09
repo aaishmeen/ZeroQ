@@ -32,6 +32,7 @@ class UserResponse(BaseModel):
     status: str | None = "approved"
     volunteer_id: str | None = None
     avatar_url: str | None = None
+    avatar_public_id: str | None = None
     bio: str | None = None
     is_approved_volunteer: bool = False
 

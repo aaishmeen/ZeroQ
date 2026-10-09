@@ -9,6 +9,7 @@ export interface User {
   role: Role;
   volunteer_id?: string | null;
   avatar_url?: string | null;
+  avatar_public_id?: string | null;
   bio?: string | null;
   status?: 'pending' | 'approved' | 'rejected';
   is_approved_volunteer?: boolean;
@@ -28,6 +29,7 @@ export interface EventItem {
   status: EventStatus;
   rejection_reason?: string | null;
   banner_url?: string | null;
+  banner_public_id?: string | null;
   payment_qr_url?: string | null;
   volunteers_limit?: number;
   accepting_volunteers?: boolean;

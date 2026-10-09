@@ -36,6 +36,11 @@ class Event(Base):
         nullable=True
     )
 
+    banner_public_id = Column(
+        String,
+        nullable=True
+    )
+
     payment_qr_url = Column(
         String,
         nullable=True

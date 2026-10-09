@@ -165,6 +165,26 @@ def login(
 
 from models import User, VolunteerApplication, VolunteerAssignment
 
+def _build_user_response(user: User, db: Session) -> UserResponse:
+    from models import VolunteerApplication, VolunteerAssignment
+    approved_app = db.query(VolunteerApplication).filter(
+        VolunteerApplication.user_id == user.id,
+        VolunteerApplication.status == "approved"
+    ).first()
+
+    approved_assign = None
+    if not approved_app:
+        approved_assign = db.query(VolunteerAssignment).filter(
+            VolunteerAssignment.volunteer_id == user.id,
+            VolunteerAssignment.status == "active"
+        ).first()
+
+    is_vol = bool(approved_app or approved_assign or user.role in ["volunteer", "admin", "superadmin"])
+    res = UserResponse.model_validate(user)
+    res.is_approved_volunteer = is_vol
+    return res
+
+
 @router.get(
     "/me",
     response_model=UserResponse
@@ -178,23 +198,7 @@ def get_current_user_profile(
         db.commit()
         db.refresh(current_user)
 
-    approved_app = db.query(VolunteerApplication).filter(
-        VolunteerApplication.user_id == current_user.id,
-        VolunteerApplication.status == "approved"
-    ).first()
-
-    approved_assign = None
-    if not approved_app:
-        approved_assign = db.query(VolunteerAssignment).filter(
-            VolunteerAssignment.volunteer_id == current_user.id,
-            VolunteerAssignment.status == "active"
-        ).first()
-
-    is_vol = bool(approved_app or approved_assign or current_user.role in ["volunteer", "admin", "superadmin"])
-
-    res = UserResponse.model_validate(current_user)
-    res.is_approved_volunteer = is_vol
-    return res
+    return _build_user_response(current_user, db)
 
 
 @router.post("/me/avatar", response_model=UserResponse)
@@ -203,23 +207,37 @@ def upload_avatar(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    import os
-    import uuid
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
+    from services.cloudinary_service import (
+        validate_and_read_image,
+        upload_image_to_cloudinary,
+        delete_cloudinary_image
+    )
 
-    os.makedirs("uploads/avatars", exist_ok=True)
-    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
-    filename = f"avatar_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
-    file_path = os.path.join("uploads", "avatars", filename)
+    file_bytes = validate_and_read_image(file, max_size_mb=5.0)
+    upload_res = upload_image_to_cloudinary(file_bytes, folder="zeroq/profiles")
 
-    with open(file_path, "wb") as f:
-        f.write(file.file.read())
+    new_secure_url = upload_res["secure_url"]
+    new_public_id = upload_res["public_id"]
+    old_public_id = current_user.avatar_public_id
 
-    current_user.avatar_url = f"/uploads/avatars/{filename}"
-    db.commit()
-    db.refresh(current_user)
-    return current_user
+    current_user.avatar_url = new_secure_url
+    current_user.avatar_public_id = new_public_id
+
+    try:
+        db.commit()
+        db.refresh(current_user)
+    except Exception:
+        db.rollback()
+        delete_cloudinary_image(new_public_id)
+        raise HTTPException(
+            status_code=500,
+            detail="Database failed to update avatar. Cloudinary upload reverted."
+        )
+
+    if old_public_id:
+        delete_cloudinary_image(old_public_id)
+
+    return _build_user_response(current_user, db)
 
 
 @router.delete("/me/avatar", response_model=UserResponse)
@@ -228,17 +246,27 @@ def delete_avatar(
     db: Session = Depends(get_db)
 ):
     import os
-    if current_user.avatar_url:
-        relative_path = current_user.avatar_url.lstrip("/")
+    from services.cloudinary_service import delete_cloudinary_image
+
+    old_public_id = current_user.avatar_public_id
+    old_avatar_url = current_user.avatar_url
+
+    current_user.avatar_url = None
+    current_user.avatar_public_id = None
+    db.commit()
+    db.refresh(current_user)
+
+    if old_public_id:
+        delete_cloudinary_image(old_public_id)
+    elif old_avatar_url and old_avatar_url.startswith("/uploads/"):
+        relative_path = old_avatar_url.lstrip("/")
         if os.path.exists(relative_path):
             try:
                 os.remove(relative_path)
             except Exception:
                 pass
-        current_user.avatar_url = None
-        db.commit()
-        db.refresh(current_user)
-    return current_user
+
+    return _build_user_response(current_user, db)
 
 
 @router.put("/me/bio", response_model=UserResponse)

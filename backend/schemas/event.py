@@ -23,6 +23,7 @@ class EventResponse(BaseModel):
     status: str
     rejection_reason: str | None
     banner_url: str | None = None
+    banner_public_id: str | None = None
     payment_qr_url: str | None = None
 
     model_config = {

@@ -16,6 +16,7 @@ class User(Base):
     status = Column(String, nullable=False, default="approved")
     volunteer_id = Column(String, unique=True, nullable=True)
     avatar_url = Column(String, nullable=True)
+    avatar_public_id = Column(String, nullable=True)
     bio = Column(String, nullable=True)
 
 
