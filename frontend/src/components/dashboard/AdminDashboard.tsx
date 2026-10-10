@@ -59,6 +59,8 @@ import {
   X,
   Check,
   Search,
+  Filter,
+  ArrowUpDown,
   Key,
   LayoutDashboard,
   UserCheck,
@@ -251,6 +253,11 @@ export const AdminDashboard: React.FC = () => {
   // Search & Filter State
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<'all' | 'student' | 'organizer' | 'admin'>('all');
+
+  // Event Tab Search, Filter & Sort State
+  const [eventSearchQuery, setEventSearchQuery] = useState('');
+  const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'active' | 'approved' | 'upcoming' | 'completed' | 'draft' | 'pending' | 'rejected'>('all');
+  const [eventSortOrder, setEventSortOrder] = useState<'newest' | 'oldest' | 'date-asc' | 'date-desc' | 'title-asc'>('newest');
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -517,6 +524,28 @@ export const AdminDashboard: React.FC = () => {
 
     return matchesRole && matchesSearch;
   });
+
+  const filteredAndSortedEvents = allEvents
+    .filter((ev) => {
+      const statusLower = (ev.status || '').toLowerCase();
+      const matchesStatus = eventStatusFilter === 'all' || statusLower === eventStatusFilter.toLowerCase();
+      const query = eventSearchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !query ||
+        (ev.title || '').toLowerCase().includes(query) ||
+        (ev.venue || '').toLowerCase().includes(query) ||
+        (ev.description || '').toLowerCase().includes(query);
+
+      return matchesStatus && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (eventSortOrder === 'newest') return b.id - a.id;
+      if (eventSortOrder === 'oldest') return a.id - b.id;
+      if (eventSortOrder === 'date-asc') return (a.date || '').localeCompare(b.date || '');
+      if (eventSortOrder === 'date-desc') return (b.date || '').localeCompare(a.date || '');
+      if (eventSortOrder === 'title-asc') return (a.title || '').localeCompare(b.title || '');
+      return 0;
+    });
 
   const handleApproveAdmin = async (userId: number, name: string) => {
     setAdminActionLoadingId(userId);
@@ -1031,67 +1060,155 @@ export const AdminDashboard: React.FC = () => {
 
         {/* TAB 2: PLATFORM EVENTS */}
         {activeTab === 'events' && (
-          <div className="bg-white p-5 rounded border border-[#CBE6C8] shadow-xs space-y-4">
-            {allEvents.length === 0 ? (
-              <p className="text-xs text-[#6B8B74] py-6 text-center">No events found.</p>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            {/* Filter, Search & Sort Control Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search events by title, venue, or description..."
+                  value={eventSearchQuery}
+                  onChange={(e) => setEventSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]"
+                />
+                {eventSearchQuery && (
+                  <button
+                    onClick={() => setEventSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Dropdown */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 shrink-0">
+                  <Filter className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                  <span>Status:</span>
+                </div>
+                <select
+                  value={eventStatusFilter}
+                  onChange={(e) => setEventStatusFilter(e.target.value as any)}
+                  className="bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
+                >
+                  <option value="all">All Statuses ({allEvents.length})</option>
+                  <option value="active">Active ({allEvents.filter((e) => (e.status || '').toLowerCase() === 'active').length})</option>
+                  <option value="completed">Completed ({allEvents.filter((e) => (e.status || '').toLowerCase() === 'completed').length})</option>
+                  <option value="approved">Approved ({allEvents.filter((e) => (e.status || '').toLowerCase() === 'approved').length})</option>
+                  <option value="upcoming">Upcoming ({allEvents.filter((e) => (e.status || '').toLowerCase() === 'upcoming').length})</option>
+                  <option value="pending">Pending ({allEvents.filter((e) => (e.status || '').toLowerCase() === 'pending').length})</option>
+                  <option value="draft">Draft ({allEvents.filter((e) => (e.status || '').toLowerCase() === 'draft').length})</option>
+                </select>
+              </div>
+
+              {/* Sort Order Dropdown */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 shrink-0">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                  <span>Sort:</span>
+                </div>
+                <select
+                  value={eventSortOrder}
+                  onChange={(e) => setEventSortOrder(e.target.value as any)}
+                  className="bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="date-asc">Date (Earliest First)</option>
+                  <option value="date-desc">Date (Latest First)</option>
+                  <option value="title-asc">Title (A-Z)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Results count summary bar */}
+            <div className="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
+              <span>Showing {filteredAndSortedEvents.length} of {allEvents.length} platform events</span>
+              {(eventSearchQuery || eventStatusFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setEventSearchQuery('');
+                    setEventStatusFilter('all');
+                  }}
+                  className="text-[#1D4ED8] hover:underline font-bold cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
+
+            {/* Events Grid */}
+            {filteredAndSortedEvents.length === 0 ? (
+              <div className="text-center py-10 space-y-2 bg-slate-50 rounded-xl border border-slate-200">
+                <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
+                <p className="text-xs text-slate-600 font-bold">No events match your search or status filter criteria.</p>
+                <p className="text-[11px] text-slate-400">Try selecting "All Statuses" or clearing your search phrase.</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {allEvents.map((ev) => (
+                {filteredAndSortedEvents.map((ev) => (
                   <div
                     key={ev.id}
-                    className="p-4 bg-[#F4FAF2] rounded border border-[#CBE6C8] space-y-3 flex flex-col justify-between"
+                    className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between hover:border-slate-300 transition-all"
                   >
                     <div className="space-y-1.5">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-sm font-bold text-[#0F2417]">{ev.title}</h4>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#E5F5E0] text-[#1D4ED8] border border-[#74C476]">
-                          {ev.status}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-slate-400 font-mono">#{ev.id}</span>
+                          <h4 className="text-sm font-bold text-[#0F172A]">{ev.title}</h4>
+                        </div>
+                        <StatusBadge status={ev.status} />
                       </div>
-                      <p className="text-xs text-[#3D5A45] line-clamp-2">{ev.description}</p>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-[#3D5A45] pt-2 border-t border-[#CBE6C8]">
+                      <p className="text-xs text-slate-600 line-clamp-2">{ev.description}</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
                         <div>
-                          <span className="block font-semibold text-[#6B8B74] text-[10px]">VENUE</span>
-                          <span className="font-medium text-[#0F2417]">{ev.venue}</span>
+                          <span className="block font-semibold text-slate-400 text-[10px] uppercase">Venue</span>
+                          <span className="font-bold text-slate-800">{ev.venue}</span>
                         </div>
                         <div>
-                          <span className="block font-semibold text-[#6B8B74] text-[10px]">DATE</span>
-                          <span className="font-medium text-[#0F2417]">{ev.date}</span>
+                          <span className="block font-semibold text-slate-400 text-[10px] uppercase">Date</span>
+                          <span className="font-bold text-slate-800">{ev.date}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 pt-2 border-t border-[#CBE6C8]">
-                      {(ev.status.toUpperCase() === 'APPROVED' || ev.status.toUpperCase() === 'UPCOMING') && (
+                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {(ev.status.toUpperCase() === 'APPROVED' || ev.status.toUpperCase() === 'UPCOMING') && (
+                          <button
+                            onClick={() => handleActivateEvent(ev.id)}
+                            className="px-2.5 py-1 bg-[#1D4ED8] hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                          >
+                            Set Active
+                          </button>
+                        )}
+                        {ev.status.toUpperCase() === 'ACTIVE' && (
+                          <button
+                            onClick={() => handleCompleteEvent(ev.id)}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                          >
+                            Mark Completed
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleActivateEvent(ev.id)}
-                          className="px-2.5 py-1 bg-[#1D4ED8] hover:bg-[#004727] text-white font-bold text-xs rounded cursor-pointer"
+                          onClick={() => handleOpenEditModal(ev)}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                         >
-                          Set Active
+                          <Edit3 className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                          Edit
                         </button>
-                      )}
-                      {ev.status.toUpperCase() === 'ACTIVE' && (
-                        <button
-                          onClick={() => handleCompleteEvent(ev.id)}
-                          className="px-2.5 py-1 bg-[#F4FAF2] hover:bg-slate-200 text-[#0F2417] border border-[#CBE6C8] font-bold text-xs rounded cursor-pointer"
-                        >
-                          Mark Completed
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleOpenEditModal(ev)}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-[#0F172A] border border-slate-200 font-bold text-xs rounded cursor-pointer flex items-center gap-1"
-                      >
-                        <Edit3 className="w-3.5 h-3.5 text-[#1D4ED8]" />
-                        Edit
-                      </button>
+                      </div>
+
                       <button
                         onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                        className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded cursor-pointer flex items-center gap-1 transition-colors"
-                        title="Delete Event"
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                        title="Permanently Delete Event"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                        Delete
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete Event
                       </button>
                     </div>
                   </div>
