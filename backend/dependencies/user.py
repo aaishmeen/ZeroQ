@@ -21,7 +21,7 @@ def get_owned_user(
             detail="User not found."
         )
 
-    if current_user.role == "admin":
+    if current_user.role in ["admin", "superadmin"]:
         return user
 
     if current_user.id == user.id:

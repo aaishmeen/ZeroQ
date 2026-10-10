@@ -45,14 +45,27 @@ def get_events(
         res.append(resp)
     return res
 
+@router.get("/all", response_model=list[EventResponse])
+def get_all_events(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "superadmin"))
+):
+    events = db.query(Event).order_by(Event.id.desc()).all()
+    res = []
+    for e in events:
+        resp = EventResponse.model_validate(e)
+        resp.accepting_volunteers = is_event_accepting_volunteers(e, db)
+        res.append(resp)
+    return res
+
 @router.get("/pending", response_model=list[EventResponse])
 def get_pending_events(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(require_role("admin", "superadmin"))
 ):
     return db.query(Event).filter(
         Event.status.in_(["PENDING", "pending", "Pending"])
-    ).all()
+    ).order_by(Event.id.desc()).all()
 
 
 @router.post("/", response_model=EventResponse)
@@ -95,15 +108,15 @@ def create_event(
 @router.get("/my-events", response_model=list[EventResponse])
 def get_my_events(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("organizer", "admin"))
+    current_user: User = Depends(require_role("organizer", "admin", "superadmin"))
 ):
 
-    if current_user.role == "admin":
-        return db.query(Event).all()
+    if current_user.role in ["admin", "superadmin"]:
+        return db.query(Event).order_by(Event.id.desc()).all()
 
     return db.query(Event).filter(
         Event.owner_id == current_user.id
-    ).all()
+    ).order_by(Event.id.desc()).all()
 
 @router.get("/{event_id}", response_model=EventResponse)
 def get_event(
@@ -303,6 +316,24 @@ def delete_event(
     event: Event = Depends(get_owned_event),
     db: Session = Depends(get_db)
 ):
+    from models.registration import Registration
+    from models.payment import Payment
+    from models.volunteer import VolunteerOpening, VolunteerApplication, VolunteerAssignment
+    from models.notification import VolunteerNotification
+    from models.dispute import GateDispute
+
+    registrations = db.query(Registration).filter(Registration.event_id == event.id).all()
+    reg_ids = [r.id for r in registrations]
+
+    if reg_ids:
+        db.query(Payment).filter(Payment.registration_id.in_(reg_ids)).delete(synchronize_session=False)
+        db.query(Registration).filter(Registration.event_id == event.id).delete(synchronize_session=False)
+
+    db.query(VolunteerAssignment).filter(VolunteerAssignment.event_id == event.id).delete(synchronize_session=False)
+    db.query(VolunteerApplication).filter(VolunteerApplication.event_id == event.id).delete(synchronize_session=False)
+    db.query(VolunteerOpening).filter(VolunteerOpening.event_id == event.id).delete(synchronize_session=False)
+    db.query(VolunteerNotification).filter(VolunteerNotification.event_id == event.id).delete(synchronize_session=False)
+    db.query(GateDispute).filter(GateDispute.event_id == event.id).delete(synchronize_session=False)
 
     db.delete(event)
     db.commit()

@@ -9,7 +9,7 @@ import type {
   ApprovedVolunteerWithAssignment,
 } from '../../types';
 import {
-  getEventsApi,
+  getAllEventsApi,
   getPendingEventsApi,
   approveEventApi,
   rejectEventApi,
@@ -17,6 +17,7 @@ import {
   updateEventApi,
   activateEventApi,
   completeEventApi,
+  deleteEventApi,
   getFileUrl,
 } from '../../api/events';
 import { getRegistrationsApi } from '../../api/registrations';
@@ -291,7 +292,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const [eventsData, pendingEvData, pendingPayData, regData, openingsData, appsData, approvedData] =
         await Promise.all([
-          getEventsApi().catch(() => []),
+          getAllEventsApi().catch(() => []),
           getPendingEventsApi().catch(() => []),
           getPendingPaymentsApi().catch(() => []),
           getRegistrationsApi().catch(() => []),
@@ -353,6 +354,17 @@ export const AdminDashboard: React.FC = () => {
       await loadData();
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Failed to mark event completed.', 'error');
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: number, title: string) => {
+    if (!confirm(`Are you sure you want to permanently delete event "${title}"? This action cannot be undone.`)) return;
+    try {
+      await deleteEventApi(eventId);
+      showToast(`Event "${title}" has been deleted successfully!`, 'info');
+      await loadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Failed to delete event.', 'error');
     }
   };
 
@@ -1075,6 +1087,14 @@ export const AdminDashboard: React.FC = () => {
                       >
                         <Edit3 className="w-3.5 h-3.5 text-[#1D4ED8]" />
                         Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                        className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded cursor-pointer flex items-center gap-1 transition-colors"
+                        title="Delete Event"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        Delete
                       </button>
                     </div>
                   </div>

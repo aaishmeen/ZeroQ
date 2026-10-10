@@ -16,6 +16,11 @@ export const getEventsApi = async (): Promise<EventItem[]> => {
   return response.data;
 };
 
+export const getAllEventsApi = async (): Promise<EventItem[]> => {
+  const response = await apiClient.get<EventItem[]>('/events/all');
+  return response.data;
+};
+
 export const getPendingEventsApi = async (): Promise<EventItem[]> => {
   const response = await apiClient.get<EventItem[]>('/events/pending');
   return response.data;

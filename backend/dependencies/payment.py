@@ -22,7 +22,7 @@ def get_owned_payment(
             detail="Payment not found."
         )
 
-    if current_user.role == "admin":
+    if current_user.role in ["admin", "superadmin"]:
         return payment
 
     if (
