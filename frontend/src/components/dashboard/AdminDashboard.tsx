@@ -597,12 +597,9 @@ export const AdminDashboard: React.FC = () => {
       >
         <div className="p-4 space-y-4">
           <div className="hidden lg:flex flex-col gap-2 pb-3 border-b border-slate-800">
-            <ZeroQLogo size="md" />
+            <ZeroQLogo size="md" variant="light" />
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Admin Console</span>
-              <span className="text-[10px] font-bold text-[#06B6D4] bg-[#06B6D4]/10 px-1.5 py-0.5 rounded border border-[#06B6D4]/30 uppercase">
-                {user?.role}
-              </span>
             </div>
           </div>
 
