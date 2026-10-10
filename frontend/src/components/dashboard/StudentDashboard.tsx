@@ -35,13 +35,16 @@ export const StudentDashboard: React.FC = () => {
   const { user, uploadAvatar, deleteAvatar } = useAuth();
   const { showToast } = useToast();
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarSuccessMsg, setAvatarSuccessMsg] = useState<string | null>(null);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     setIsUploadingAvatar(true);
+    setAvatarSuccessMsg(null);
     try {
       await uploadAvatar(e.target.files[0]);
       showToast('Profile picture updated successfully.', 'success');
+      setAvatarSuccessMsg('Profile picture updated successfully.');
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Failed to upload profile picture.', 'error');
     } finally {
@@ -51,9 +54,11 @@ export const StudentDashboard: React.FC = () => {
 
   const handleAvatarDelete = async () => {
     setIsUploadingAvatar(true);
+    setAvatarSuccessMsg(null);
     try {
       await deleteAvatar();
       showToast('Profile picture removed.', 'info');
+      setAvatarSuccessMsg('Profile picture removed.');
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Failed to remove profile picture.', 'error');
     } finally {
@@ -411,6 +416,17 @@ export const StudentDashboard: React.FC = () => {
           {/* Right Column: Vertical Profile Card */}
           <aside className="lg:col-span-4 sticky top-24">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-center space-y-5">
+              {avatarSuccessMsg && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{avatarSuccessMsg}</span>
+                  </div>
+                  <button onClick={() => setAvatarSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
               
               {/* Profile Avatar & Upload */}
               <div className="relative w-28 h-28 mx-auto">

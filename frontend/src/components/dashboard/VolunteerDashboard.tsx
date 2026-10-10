@@ -45,6 +45,7 @@ import {
 
 import { getFileUrl } from '../../api/events';
 import { PageHeader } from '../common/PageHeader';
+import { useToast } from '../common/ToastContainer';
 
 interface ScanHistoryItem {
   id: string;
@@ -57,6 +58,7 @@ interface ScanHistoryItem {
 
 export const VolunteerDashboard: React.FC = () => {
   const { user, logout, uploadAvatar, deleteAvatar, updateBio } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'profile' | 'explore' | 'scan' | 'disputes'>('profile');
 
   // Bio / Skills state
@@ -106,6 +108,7 @@ export const VolunteerDashboard: React.FC = () => {
   // Avatar Management state
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
 
   // Scanner state
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -257,8 +260,11 @@ export const VolunteerDashboard: React.FC = () => {
     const file = e.target.files[0];
     setIsUploadingAvatar(true);
     setAvatarError(null);
+    setAvatarSuccess(null);
     try {
       await uploadAvatar(file);
+      showToast('Profile picture updated successfully.', 'success');
+      setAvatarSuccess('Profile picture updated successfully.');
     } catch (err: any) {
       setAvatarError(err.response?.data?.detail || 'Failed to upload photo.');
     } finally {
@@ -269,8 +275,11 @@ export const VolunteerDashboard: React.FC = () => {
   const handleAvatarDelete = async () => {
     setIsUploadingAvatar(true);
     setAvatarError(null);
+    setAvatarSuccess(null);
     try {
       await deleteAvatar();
+      showToast('Profile picture removed.', 'info');
+      setAvatarSuccess('Profile picture removed successfully.');
     } catch (err: any) {
       setAvatarError(err.response?.data?.detail || 'Failed to remove photo.');
     } finally {
@@ -625,10 +634,27 @@ export const VolunteerDashboard: React.FC = () => {
                 }
               />
 
+              {avatarSuccess && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{avatarSuccess}</span>
+                  </div>
+                  <button onClick={() => setAvatarSuccess(null)} className="text-emerald-500 hover:text-emerald-700">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               {avatarError && (
-                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{avatarError}</span>
+                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{avatarError}</span>
+                  </div>
+                  <button onClick={() => setAvatarError(null)} className="text-red-500 hover:text-red-700">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               )}
 

@@ -17,6 +17,7 @@ import {
   updateEventApi,
   activateEventApi,
   completeEventApi,
+  getFileUrl,
 } from '../../api/events';
 import { getRegistrationsApi } from '../../api/registrations';
 import {
@@ -65,11 +66,52 @@ import {
   Briefcase,
   Layers,
   MapPin,
+  Upload,
+  Trash2,
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, uploadAvatar, deleteAvatar } = useAuth();
   const { showToast } = useToast();
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarSuccessMsg, setAvatarSuccessMsg] = useState<string | null>(null);
+  const [avatarErrorMsg, setAvatarErrorMsg] = useState<string | null>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setIsUploadingAvatar(true);
+    setAvatarErrorMsg(null);
+    setAvatarSuccessMsg(null);
+    try {
+      await uploadAvatar(file);
+      showToast('Profile picture updated successfully!', 'success');
+      setAvatarSuccessMsg('Profile picture updated successfully.');
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || 'Failed to upload profile picture.';
+      setAvatarErrorMsg(msg);
+      showToast(msg, 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    setIsUploadingAvatar(true);
+    setAvatarErrorMsg(null);
+    setAvatarSuccessMsg(null);
+    try {
+      await deleteAvatar();
+      showToast('Profile picture removed.', 'info');
+      setAvatarSuccessMsg('Profile picture removed.');
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || 'Failed to remove profile picture.';
+      setAvatarErrorMsg(msg);
+      showToast(msg, 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState<
     'overview' | 'events' | 'pending-approvals' | 'payments' | 'registrations' | 'users' | 'volunteers' | 'profile'
   >('overview');
@@ -1379,15 +1421,72 @@ export const AdminDashboard: React.FC = () => {
         {/* TAB 8: PROFILE */}
         {activeTab === 'profile' && (
           <div className="bg-white p-6 rounded border border-[#CBE6C8] shadow-xs max-w-lg mx-auto space-y-4">
-            <div className="flex items-center gap-3 border-b border-[#E5F5E0] pb-4">
-              <div className="w-12 h-12 rounded bg-[#1D4ED8] text-white font-bold text-lg flex items-center justify-center">
-                {user?.name.charAt(0).toUpperCase()}
+            {avatarSuccessMsg && (
+              <div className="p-3 bg-[#F4FAF2] border border-[#74C476] text-[#1D4ED8] text-xs rounded flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#74C476] shrink-0" />
+                  <span>{avatarSuccessMsg}</span>
+                </div>
+                <button onClick={() => setAvatarSuccessMsg(null)} className="text-[#6B8B74] hover:text-[#0F2417]">
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-[#0F2417]">{user?.name}</h3>
-                <span className="text-xs font-semibold text-[#1D4ED8] uppercase">
-                  {user?.role} Administrator
-                </span>
+            )}
+            {avatarErrorMsg && (
+              <div className="p-3 bg-[#FEE2E2] border border-rose-300 text-[#991B1B] text-xs rounded flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{avatarErrorMsg}</span>
+                </div>
+                <button onClick={() => setAvatarErrorMsg(null)} className="text-rose-500 hover:text-rose-700">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5F5E0] pb-4 gap-4">
+              <div className="flex items-center gap-3">
+                {user?.avatar_url ? (
+                  <img
+                    src={getFileUrl(user.avatar_url)}
+                    alt={user?.name}
+                    className="w-14 h-14 rounded object-cover border border-[#74C476]"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded bg-[#1D4ED8] text-white font-bold text-lg flex items-center justify-center">
+                    {user?.name?.charAt(0).toUpperCase() || 'A'}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-base font-bold text-[#0F2417]">{user?.name}</h3>
+                  <span className="text-xs font-semibold text-[#1D4ED8] uppercase">
+                    {user?.role} Administrator
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <label className="cursor-pointer px-3 py-1.5 bg-[#E5F5E0] hover:bg-[#d8eed2] text-[#1D4ED8] border border-[#74C476] rounded text-xs font-bold transition-colors flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5" />
+                  {isUploadingAvatar ? 'Uploading...' : user?.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingAvatar}
+                    className="hidden"
+                  />
+                </label>
+                {user?.avatar_url && (
+                  <button
+                    onClick={handleAvatarDelete}
+                    disabled={isUploadingAvatar}
+                    className="px-2.5 py-1.5 bg-[#FEE2E2] hover:bg-rose-200 text-[#991B1B] border border-rose-300 rounded text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                    title="Remove photo"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 

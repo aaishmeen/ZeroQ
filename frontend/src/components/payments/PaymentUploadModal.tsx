@@ -3,6 +3,7 @@ import type { EventItem } from '../../types';
 import { uploadPaymentApi } from '../../api/payments';
 import { getFileUrl } from '../../api/events';
 import { X, UploadCloud, CheckCircle2, QrCode, AlertCircle, ArrowRight } from 'lucide-react';
+import { useToast } from '../common/ToastContainer';
 
 import { RealisticScannerView } from '../common/RealisticScannerView';
 
@@ -21,6 +22,7 @@ export const PaymentUploadModal: React.FC<PaymentUploadModalProps> = ({
   onClose,
   onPaymentSubmitted,
 }) => {
+  const { showToast } = useToast();
   const [transactionId, setTransactionId] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export const PaymentUploadModal: React.FC<PaymentUploadModalProps> = ({
     setIsSubmitting(true);
     try {
       await uploadPaymentApi(registrationId, selectedFile, transactionId || undefined);
+      showToast('Payment proof uploaded successfully!', 'success');
       setIsSubmitting(false);
       setIsSuccess(true);
       setTimeout(() => {
