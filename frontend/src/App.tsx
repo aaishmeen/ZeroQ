@@ -15,7 +15,6 @@ import { StudentDashboard } from './components/dashboard/StudentDashboard';
 import { VolunteerDashboard } from './components/dashboard/VolunteerDashboard';
 import { AdminDashboard } from './components/dashboard/AdminDashboard';
 import { OrganizerDashboard } from './components/dashboard/OrganizerDashboard';
-import { SuperadminDashboard } from './components/dashboard/SuperadminDashboard';
 import { PendingAdminView } from './components/auth/PendingAdminView';
 import type { EventItem } from './types';
 import { registerForEventApi } from './api/events';
@@ -137,13 +136,12 @@ const MainAppContent: React.FC = () => {
                   />
                 );
               }
-              if (user.role === 'admin') {
+              if (user.role === 'admin' || user.role === 'superadmin') {
                 return user.status === 'pending' ? <PendingAdminView /> : <AdminDashboard />;
               }
               if (user.role === 'organizer') {
                 return <OrganizerDashboard />;
               }
-              return <SuperadminDashboard />;
             }
 
             // Student & Volunteer Accounts
