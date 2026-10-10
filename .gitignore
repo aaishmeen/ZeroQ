@@ -38,6 +38,11 @@ htmlcov/
 # Database Files
 *.sqlite3
 *.db
+*.sql
+zeroq_database_backup.json
+zeroq_postgres_restoration.sql
+**/zeroq_database_backup.json
+**/zeroq_postgres_restoration.sql
 
 # Temporary Files
 tmp/

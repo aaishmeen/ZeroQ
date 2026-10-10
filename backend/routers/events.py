@@ -33,9 +33,9 @@ def get_events(
 ):
     events = db.query(Event).filter(
         Event.status.in_([
-            "APPROVED", "UPCOMING", "ACTIVE", "COMPLETED",
-            "approved", "upcoming", "active", "completed",
-            "Approved", "Upcoming", "Active", "Completed"
+            "APPROVED", "UPCOMING", "ACTIVE",
+            "approved", "upcoming", "active",
+            "Approved", "Upcoming", "Active"
         ])
     ).all()
     res = []
